@@ -1,707 +1,515 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Attendance Hub</title>
     <!-- Load Tailwind CSS CDN - FIXED version to a stable 3.4.17 -->
     <script src="https://cdn.tailwindcss.com?version=3.4.17"></script>
     <style>
-      /* Custom styles for status badges */
-      .status-badge {
-        padding: 4px 8px;
-        border-radius: 9999px;
-        font-weight: 600;
-        display: inline-block;
-        min-width: 80px;
-        text-align: center;
-      }
-      /* Style for the main content area to allow scrolling */
-      .main-content {
-        min-height: calc(
-          100vh - 4rem
-        ); /* Ensure full height minus header/footer if any */
-      }
-      /* Utility for active sidebar link */
-      .active-nav {
-        background-color: #4f46e5;
-        color: white;
-      }
-      /* Style for the calendar cell */
-      .calendar-cell {
-        width: 40px; /* Fixed width for date columns */
-        min-width: 40px;
-        height: 40px;
-        text-align: center;
-        padding: 0;
-        cursor: pointer;
-        transition: background-color 0.1s;
-        font-size: 0.75rem; /* text-xs */
-        font-weight: 600;
-        line-height: 1; /* Adjust line height for the two lines of text */
-      }
-      .calendar-cell:hover:not(.day-header):not(.holiday) {
-        background-color: #e5e7eb; /* gray-200 */
-      }
-      .holiday {
-        background-color: #f3f4f6; /* gray-100 */
-        color: #9ca3af; /* gray-400 */
-      }
-      .status-P {
-        background-color: #10b981;
-        color: white;
-      } /* Emerald-500 (Present) */
-      .status-A {
-        background-color: #ef4444;
-        color: white;
-      } /* Red-500 (Absent) */
-      .status-L {
-        background-color: #f59e0b;
-        color: white;
-      } /* Amber-500 (Late) */
-      .status-PH {
-        background-color: #3b82f6;
-        color: white;
-      } /* Blue-500 (Public Holiday) */
-      .status-U {
-        background-color: #9ca3af;
-        color: white;
-      } /* Gray-400 (Unknown/Unmarked) */
+        /* Custom styles for status badges */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-weight: 600;
+            display: inline-block;
+            min-width: 80px;
+            text-align: center;
+        }
+        /* Style for the main content area to allow scrolling */
+        .main-content {
+            min-height: calc(100vh - 4rem); /* Ensure full height minus header/footer if any */
+        }
+        /* Utility for active sidebar link */
+        .active-nav {
+            background-color: #4f46e5;
+            color: white;
+        }
+        /* Style for the calendar cell */
+        .calendar-cell {
+            width: 40px; /* Fixed width for date columns */
+            min-width: 40px;
+            height: 40px;
+            text-align: center;
+            padding: 0;
+            cursor: pointer;
+            transition: background-color 0.1s;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600;
+            line-height: 1; /* Adjust line height for the two lines of text */
+        }
+        .calendar-cell:hover:not(.day-header):not(.holiday) {
+            background-color: #e5e7eb; /* gray-200 */
+        }
+        .holiday {
+            background-color: #f3f4f6; /* gray-100 */
+            color: #9ca3af; /* gray-400 */
+        }
+        .status-P { background-color: #10b981; color: white; } /* Emerald-500 (Present) */
+        .status-A { background-color: #ef4444; color: white; } /* Red-500 (Absent) */
+        .status-L { background-color: #f59e0b; color: white; } /* Amber-500 (Late) */
+        .status-PH { background-color: #3b82f6; color: white; } /* Blue-500 (Public Holiday) */
+        .status-U { background-color: #9ca3af; color: white; } /* Gray-400 (Unknown/Unmarked) */
     </style>
-  </head>
-  <body class="bg-gray-100 antialiased">
+</head>
+<body class="bg-gray-100 antialiased">
+
     <!-- Main Container -->
     <div class="flex h-screen overflow-hidden">
-      <!-- Sidebar (Hidden on mobile by default) -->
-      <div
-        id="sidebar"
-        class="w-64 bg-indigo-800 text-white flex-shrink-0 transition-all duration-300 transform -translate-x-full md:translate-x-0 absolute md:relative z-20 shadow-xl"
-      >
-        <div class="p-6">
-          <h2 class="text-2xl font-bold border-b border-indigo-700 pb-3 mb-6">
-            Attendance Hub
-          </h2>
-          <nav>
-            <a
-              href="#"
-              data-view="dashboard"
-              class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700 active-nav"
-            >
-              <svg
-                class="w-5 h-5 mr-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                ></path>
-              </svg>
-              Dashboard
-            </a>
-            <a
-              href="#"
-              data-view="students"
-              class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
-            >
-              <svg
-                class="w-5 h-5 mr-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M9 20H4v-2a3 3 0 015-2.236M9 20v-2a3 3 0 00-5.356-1.857m11.115-7.443-2.289-.968A3.003 3.003 0 0015 10a3 3 0 00-2.356-1.185l-2.29-.968C9.55 7.14 8.789 7 8 7V6c0-1.105.895-2 2-2h4c1.105 0 2 .895 2 2v1c.789 0 1.55.14 2.228.455l2.289.968A3.003 3.003 0 0121 12a3.003 3.003 0 01-2.356 2.815l-2.289.968m-14.777-6.002C5.972 8.358 6 9.176 6 10c0 1.831-.502 3.513-1.398 4.87C4.156 15.659 3.197 16.5 2 16.5"
-                ></path>
-              </svg>
-              Student Management
-            </a>
-            <a
-              href="#"
-              data-view="attendance"
-              class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
-            >
-              <svg
-                class="w-5 h-5 mr-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                ></path>
-              </svg>
-              Monthly Attendance
-            </a>
-            <a
-              href="#"
-              data-view="reports"
-              class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
-            >
-              <svg
-                class="w-5 h-5 mr-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0h6"
-                ></path>
-              </svg>
-              Reports
-            </a>
-          </nav>
-        </div>
-        <!-- User Info (Auth Status) -->
-        <div class="absolute bottom-0 p-4 border-t border-indigo-700 w-full">
-          <p id="user-status" class="text-sm">Status: Initializing...</p>
-          <p id="user-id-display" class="text-xs break-all mt-1 opacity-70"></p>
-        </div>
-      </div>
 
-      <!-- Mobile Menu Button (Toggle Sidebar) -->
-      <button
-        id="mobile-menu-btn"
-        class="fixed top-4 left-4 z-30 p-2 bg-indigo-600 rounded-full shadow-lg md:hidden text-white"
-      >
-        <svg
-          class="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 6h16M4 12h16m-7 6h7"
-          ></path>
-        </svg>
-      </button>
-
-      <!-- Main Content Area -->
-      <div class="flex-1 flex flex-col overflow-auto p-4 sm:p-8 main-content">
-        <header class="h-16 flex items-center justify-end md:justify-start">
-          <h1 id="view-title" class="text-3xl font-bold text-gray-800">
-            Dashboard
-          </h1>
-        </header>
-
-        <!-- Main View Container -->
-        <div id="view-container" class="flex-1 mt-4">
-          <!-- Content will be injected here -->
+        <!-- Sidebar (Hidden on mobile by default) -->
+        <div id="sidebar" class="w-64 bg-indigo-800 text-white flex-shrink-0 transition-all duration-300 transform -translate-x-full md:translate-x-0 absolute md:relative z-20 shadow-xl">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold border-b border-indigo-700 pb-3 mb-6">Attendance Hub</h2>
+                <nav>
+                    <a href="#" data-view="dashboard" class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700 active-nav">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        Dashboard
+                    </a>
+                    <a href="#" data-view="students" class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M9 20H4v-2a3 3 0 015-2.236M9 20v-2a3 3 0 00-5.356-1.857m11.115-7.443-2.289-.968A3.003 3.003 0 0015 10a3 3 0 00-2.356-1.185l-2.29-.968C9.55 7.14 8.789 7 8 7V6c0-1.105.895-2 2-2h4c1.105 0 2 .895 2 2v1c.789 0 1.55.14 2.228.455l2.289.968A3.003 3.003 0 0121 12a3.003 3.003 0 01-2.356 2.815l-2.289.968m-14.777-6.002C5.972 8.358 6 9.176 6 10c0 1.831-.502 3.513-1.398 4.87C4.156 15.659 3.197 16.5 2 16.5"></path></svg>
+                        Student Management
+                    </a>
+                    <a href="#" data-view="attendance" class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Monthly Attendance
+                    </a>
+                    <a href="#" data-view="reports" class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0h6"></path></svg>
+                        Reports
+                    </a>
+                </nav>
+            </div>
+             <!-- User Info (Auth Status) -->
+            <div class="absolute bottom-0 p-4 border-t border-indigo-700 w-full">
+                <p id="user-status" class="text-sm">Status: Initializing...</p>
+                <p id="user-id-display" class="text-xs break-all mt-1 opacity-70"></p>
+            </div>
         </div>
 
-        <footer class="mt-8 border-t pt-4 text-center text-gray-500 text-sm">
-          Designed By Rakesh Kadel
-        </footer>
-      </div>
+        <!-- Mobile Menu Button (Toggle Sidebar) -->
+        <button id="mobile-menu-btn" class="fixed top-4 left-4 z-30 p-2 bg-indigo-600 rounded-full shadow-lg md:hidden text-white">
+             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
 
-      <!-- Overlay for mobile view -->
-      <div
-        id="sidebar-overlay"
-        class="fixed inset-0 bg-black opacity-50 z-10 hidden md:hidden"
-      ></div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-auto p-4 sm:p-8 main-content">
+            <header class="h-16 flex items-center justify-end md:justify-start">
+                <h1 id="view-title" class="text-3xl font-bold text-gray-800">Dashboard</h1>
+            </header>
+
+            <!-- Main View Container -->
+            <div id="view-container" class="flex-1 mt-4">
+                <!-- Content will be injected here -->
+            </div>
+            
+            <footer class="mt-8 border-t pt-4 text-center text-gray-500 text-sm">
+                Designed By Rakesh Kadel
+            </footer>
+        </div>
+
+        <!-- Overlay for mobile view -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black opacity-50 z-10 hidden md:hidden"></div>
+
     </div>
 
     <!-- Firebase Imports -->
     <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-      import {
-        getAuth,
-        signInAnonymously,
-        signInWithCustomToken,
-        onAuthStateChanged,
-      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-      import {
-        getFirestore,
-        doc,
-        collection,
-        onSnapshot,
-        addDoc,
-        deleteDoc,
-        query,
-        orderBy,
-        setDoc,
-        where,
-        writeBatch,
-      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-      import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, query, orderBy, setDoc, where, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-      // Global Firebase Variables (Mandatory Canvas Setup)
-      const appId =
-        typeof __app_id !== "undefined" ? __app_id : "default-app-id";
-      const firebaseConfig =
-        typeof __firebase_config !== "undefined"
-          ? JSON.parse(__firebase_config)
-          : null;
-      const initialAuthToken =
-        typeof __initial_auth_token !== "undefined"
-          ? __initial_auth_token
-          : null;
-
-      let db, auth; // Declare Firebase instances globally
-      let students = []; // Holds all student records
-      let allAttendanceRecords = []; // Holds all attendance records for reporting
-      let currentView = "dashboard";
-      let userId = null;
-      let monthlyViewDate = new Date(); // Tracks the currently viewed month/year
-
-      // DOM Elements
-      const viewContainer = document.getElementById("view-container");
-      const viewTitle = document.getElementById("view-title");
-      const userStatusEl = document.getElementById("user-status");
-      const userIdDisplayEl = document.getElementById("user-id-display");
-
-      // --- FIREBASE INITIALIZATION ---
-
-      function initializeFirebase() {
-        if (!firebaseConfig) {
-          console.error("Firebase configuration is missing.");
-          document.getElementById("user-status").textContent =
-            "Error: Firebase Config Missing.";
-          return;
-        }
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
-
-        setLogLevel("Debug");
-
-        // Set up Authentication Listener
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            userId = user.uid;
-            userStatusEl.textContent = "Status: Connected";
-            userIdDisplayEl.textContent = `User ID: ${userId}`;
-
-            // Once authenticated, start listening for data
-            setupDataListeners();
-          } else {
-            handleAuth();
-          }
-        });
-
-        renderView("dashboard");
-      }
-
-      // --- FIREBASE PATHS & FUNCTIONS ---
-
-      const getStudentCollectionRef = () =>
-        collection(db, "artifacts", appId, "public", "data", "students");
-      const getAttendanceCollectionRef = () =>
-        collection(
-          db,
-          "artifacts",
-          appId,
-          "public",
-          "data",
-          "attendance_records"
-        );
-
-      async function handleAuth() {
-        try {
-          if (initialAuthToken) {
-            await signInWithCustomToken(auth, initialAuthToken);
-          } else {
-            await signInAnonymously(auth);
-          }
-        } catch (error) {
-          console.error("Firebase Auth Error:", error);
-          userStatusEl.textContent = "Status: Auth Error!";
-        }
-      }
-
-      async function addStudent(name, rollNo) {
-        if (!userId) {
-          console.error("User not authenticated.");
-          return;
-        }
-        try {
-          await addDoc(getStudentCollectionRef(), {
-            name: name,
-            rollNo: rollNo,
-            createdAt: new Date(),
-          });
-          showMessage(`Student ${name} added successfully!`, "green");
-        } catch (e) {
-          console.error("Error adding student: ", e);
-          showMessage("Error adding student.", "red");
-        }
-      }
-
-      async function deleteStudent(id) {
-        if (!userId) {
-          console.error("User not authenticated.");
-          return;
-        }
-        try {
-          await deleteDoc(doc(getStudentCollectionRef(), id));
-          showMessage("Student deleted successfully!", "green");
-        } catch (e) {
-          console.error("Error deleting student: ", e);
-          showMessage("Error deleting student.", "red");
-        }
-      }
-
-      // Function to set or update a single attendance record
-      async function setAttendanceRecord(studentId, date, status) {
-        if (!userId) return;
-        const docId = `${studentId}_${date}`;
-        const attendanceRef = doc(getAttendanceCollectionRef(), docId);
-
-        try {
-          await setDoc(
-            attendanceRef,
-            {
-              studentId: studentId,
-              date: date,
-              status: status,
-              timestamp: new Date(),
-            },
-            { merge: true }
-          );
-          // UI update happens automatically via the global onSnapshot listener for allAttendanceRecords
-        } catch (e) {
-          console.error("Error setting attendance record: ", e);
-          showMessage("Error saving attendance mark.", "red");
-        }
-      }
-
-      async function markMonthPresent(year, month) {
-        if (!userId || students.length === 0) {
-          showMessage(
-            "Error: User not authenticated or no students available.",
-            "red"
-          );
-          return;
-        }
-
-        const startDate = new Date(year, month - 1, 1);
-        const endDate = new Date(year, month, 0);
-        const daysInMonth = endDate.getDate();
-        const monthName = startDate.toLocaleString("default", {
-          month: "long",
-        });
-
-        let batch = writeBatch(db);
-        let totalRecords = 0;
-
-        for (let day = 1; day <= daysInMonth; day++) {
-          const currentDate = new Date(year, month - 1, day);
-          const dateStr = currentDate.toISOString().slice(0, 10);
-
-          const dayOfWeek = currentDate.getDay(); // 0=Sun, 6=Sat
-
-          // Only skip Saturday (6) - School is Sun-Fri
-          if (dayOfWeek === 6) {
-            continue;
-          }
-
-          students.forEach((student) => {
-            const docId = `${student.id}_${dateStr}`;
-            const attendanceRef = doc(getAttendanceCollectionRef(), docId);
-
-            batch.set(
-              attendanceRef,
-              {
-                studentId: student.id,
-                date: dateStr,
-                status: "Present",
-                timestamp: new Date(),
-              },
-              { merge: true }
-            );
-            totalRecords++;
-
-            if (totalRecords % 490 === 0) {
-              console.log(`Committing intermediate batch...`);
-              batch.commit();
-              batch = writeBatch(db);
-            }
-          });
-        }
-
-        try {
-          await batch.commit();
-          showMessage(
-            `Successfully marked ${students.length} students Present for all school days (Sun-Fri) in ${monthName} ${year}. Total records processed: ${totalRecords}.`,
-            "green"
-          );
-        } catch (e) {
-          console.error("Batch write error during monthly mark: ", e);
-          showMessage(
-            "Error marking monthly attendance. Check console for details.",
-            "red"
-          );
-        }
-      }
-
-      // --- DATA LISTENERS ---
-
-      function setupDataListeners() {
-        if (!userId) return;
-
-        // 1. Student Listener
-        const qStudents = getStudentCollectionRef();
-        onSnapshot(
-          qStudents,
-          (snapshot) => {
-            const newStudents = [];
-            snapshot.forEach((doc) => {
-              newStudents.push({ id: doc.id, ...doc.data() });
-            });
-            students = newStudents.sort((a, b) => a.rollNo - b.rollNo); // Keep sorted
-
-            // Re-render the current view to reflect new student list/stats
-            renderView(currentView);
-          },
-          (error) => {
-            console.error("Error fetching students:", error);
-            showMessage("Could not load student list.", "red");
-          }
-        );
-
-        // 2. All Attendance Listener (for comprehensive reports/dashboard)
-        const qAttendance = getAttendanceCollectionRef();
-
-        onSnapshot(
-          qAttendance,
-          (snapshot) => {
-            allAttendanceRecords = [];
-            snapshot.forEach((doc) => {
-              allAttendanceRecords.push({ id: doc.id, ...doc.data() });
-            });
-
-            // Re-render reports/dashboard immediately when attendance changes
-            if (
-              currentView === "dashboard" ||
-              currentView === "reports" ||
-              currentView === "attendance"
-            ) {
-              renderView(currentView);
-            }
-          },
-          (error) => {
-            console.error("Error fetching all attendance records:", error);
-          }
-        );
-      }
-
-      // --- DATA CALCULATION ---
-
-      function calculateAttendanceStats() {
-        const stats = {
-          totalStudents: students.length,
-          totalAttendanceDays: 0,
-          totalPresent: 0,
-          totalAbsent: 0,
-          totalLate: 0,
-          totalPublicHolidays: 0,
-          totalPresentUntilLastMonth: 0,
-          studentStats: {}, // {studentId: {present, absent, late, publicHoliday, percentage}}
+        // --- FIREBASE CONFIGURATION (Provided by User) ---
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyAjfgjWwe3yBGsC2SjQGbF5a4rWf8rXyZM",
+            authDomain: "student-attendance-a9e41.firebaseapp.com",
+            projectId: "student-attendance-a9e41", // Used as the unique path identifier
+            storageBucket: "student-attendance-a9e41.firebasestorage.app",
+            messagingSenderId: "22011088154",
+            appId: "1:22011088154:web:13a1655b254138448830a3"
         };
+        const DEPLOYMENT_APP_ID = FIREBASE_CONFIG.projectId; 
+        const INITIAL_AUTH_TOKEN = null; // No custom token needed for Netlify deployment
 
-        const daySet = new Set();
-        const today = new Date();
-        const currentMonthPrefix = today.toISOString().slice(0, 7);
+        let db, auth; // Declare Firebase instances globally
+        let students = []; // Holds all student records
+        let allAttendanceRecords = []; // Holds all attendance records for reporting
+        let currentView = 'dashboard';
+        let userId = null;
+        let monthlyViewDate = new Date(); // Tracks the currently viewed month/year
 
-        students.forEach((s) => {
-          stats.studentStats[s.id] = {
-            present: 0,
-            absent: 0,
-            late: 0,
-            publicHoliday: 0,
-            totalMarkedDays: 0,
-            percentage: 0,
-          };
-        });
+        // DOM Elements
+        const viewContainer = document.getElementById('view-container');
+        const viewTitle = document.getElementById('view-title');
+        const userStatusEl = document.getElementById('user-status');
+        const userIdDisplayEl = document.getElementById('user-id-display');
 
-        allAttendanceRecords.forEach((record) => {
-          daySet.add(record.date);
-          const studentId = record.studentId;
-          const status = record.status;
-          const recordDatePrefix = record.date.slice(0, 7);
-
-          if (stats.studentStats[studentId]) {
-            stats.studentStats[studentId].totalMarkedDays++;
-
-            if (status === "Present") {
-              stats.totalPresent++;
-              stats.studentStats[studentId].present++;
-              if (recordDatePrefix !== currentMonthPrefix) {
-                // Sum Present (P + L) before current month
-                stats.totalPresentUntilLastMonth++;
-              }
-            } else if (status === "Absent") {
-              stats.totalAbsent++;
-              stats.studentStats[studentId].absent++;
-            } else if (status === "Late") {
-              stats.totalLate++;
-              stats.studentStats[studentId].late++;
-              if (recordDatePrefix !== currentMonthPrefix) {
-                // Sum Present (P + L) before current month
-                stats.totalPresentUntilLastMonth++;
-              }
-            } else if (status === "PH") {
-              stats.totalPublicHolidays++;
-              stats.studentStats[studentId].publicHoliday++;
+        // --- FIREBASE INITIALIZATION ---
+        
+        function initializeFirebase() {
+            const configToUse = FIREBASE_CONFIG;
+            
+            if (!configToUse || !configToUse.projectId) {
+                console.error("Firebase configuration is missing or invalid.");
+                document.getElementById('user-status').textContent = 'Error: Firebase Config Missing.';
+                return; 
             }
-          }
-        });
+            
+            // Initialize Firebase
+            const app = initializeApp(configToUse);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            setLogLevel('Debug');
 
-        stats.totalAttendanceDays = daySet.size;
+            // Set up Authentication Listener
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    userStatusEl.textContent = 'Status: Connected';
+                    userIdDisplayEl.textContent = `User ID: ${userId}`;
+                    
+                    // Once authenticated, start listening for data
+                    setupDataListeners();
+                } else {
+                    handleAuth();
+                }
+            });
 
-        // Calculate student percentages and global percentage
-        let totalExpectedMarks = 0; // P + A + L (excluding PH)
-        let totalActualPresent = 0; // P + L
-
-        students.forEach((s) => {
-          const studentStat = stats.studentStats[s.id];
-          if (studentStat) {
-            const expectedMarks =
-              studentStat.present + studentStat.absent + studentStat.late;
-            totalExpectedMarks += expectedMarks;
-            totalActualPresent += studentStat.present + studentStat.late;
-
-            if (expectedMarks > 0) {
-              // Percentage is (Present + Late) / (Present + Absent + Late)
-              studentStat.percentage =
-                ((studentStat.present + studentStat.late) / expectedMarks) *
-                100;
-            }
-          }
-        });
-
-        stats.globalPercentage =
-          totalExpectedMarks > 0
-            ? (totalActualPresent / totalExpectedMarks) * 100
-            : 0;
-
-        // Determine top 10 students
-        const sortedStudents = students
-          .map((s) => ({
-            name: s.name,
-            percentage: stats.studentStats[s.id]?.percentage || 0,
-          }))
-          .sort((a, b) => b.percentage - a.percentage);
-
-        stats.top10Students = sortedStudents.slice(0, 10);
-
-        return stats;
-      }
-
-      // --- UI & STATE MANAGEMENT ---
-
-      function getStatusClasses(status) {
-        return `status-${status.charAt(0)}`;
-      }
-
-      function showMessage(text, color) {
-        const messageEl = document.getElementById("message");
-        messageEl.textContent = text;
-        messageEl.className = `text-sm font-semibold h-5 mt-1 ${
-          color === "green" ? "text-green-600" : "text-red-600"
-        }`;
-        setTimeout(() => (messageEl.textContent = ""), 4000);
-      }
-
-      function renderView(viewName) {
-        currentView = viewName;
-
-        document.querySelectorAll(".menu-item").forEach((item) => {
-          item.classList.remove("active-nav");
-          if (item.dataset.view === viewName) {
-            item.classList.add("active-nav");
-            viewTitle.textContent = item.textContent.trim();
-          }
-        });
-
-        viewContainer.innerHTML = "";
-
-        const sidebar = document.getElementById("sidebar");
-        const overlay = document.getElementById("sidebar-overlay");
-        if (
-          sidebar.classList.contains("translate-x-0") &&
-          window.innerWidth < 768
-        ) {
-          sidebar.classList.add("-translate-x-full");
-          sidebar.classList.remove("translate-x-0");
-          overlay.classList.add("hidden");
+            renderView('dashboard'); 
         }
 
-        switch (viewName) {
-          case "dashboard":
-            renderDashboard();
-            break;
-          case "students":
-            renderStudentManagement();
-            break;
-          case "attendance":
-            renderMonthlyAttendance(); // Renamed function
-            break;
-          case "reports":
-            renderReports();
-            break;
+        // --- FIREBASE PATHS & FUNCTIONS ---
+
+        const getStudentCollectionRef = () => collection(db, 'artifacts', DEPLOYMENT_APP_ID, 'public', 'data', 'students');
+        const getAttendanceCollectionRef = () => collection(db, 'artifacts', DEPLOYMENT_APP_ID, 'public', 'data', 'attendance_records');
+
+        async function handleAuth() {
+            try {
+                if (INITIAL_AUTH_TOKEN) {
+                    await signInWithCustomToken(auth, INITIAL_AUTH_TOKEN);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase Auth Error:", error);
+                userStatusEl.textContent = 'Status: Auth Error!';
+            }
         }
-      }
 
-      // --- VIEW RENDERING FUNCTIONS ---
+        async function addStudent(name, rollNo) {
+            if (!userId) {
+                console.error("User not authenticated.");
+                return;
+            }
+            try {
+                await addDoc(getStudentCollectionRef(), {
+                    name: name,
+                    rollNo: rollNo,
+                    createdAt: new Date()
+                });
+                showMessage(`Student ${name} added successfully!`, 'green');
+            } catch (e) {
+                console.error("Error adding student: ", e);
+                showMessage('Error adding student.', 'red');
+            }
+        }
 
-      function renderDashboard() {
-        const stats = calculateAttendanceStats();
+        async function deleteStudent(id) {
+            if (!userId) {
+                console.error("User not authenticated.");
+                return;
+            }
+            try {
+                await deleteDoc(doc(getStudentCollectionRef(), id));
+                showMessage('Student deleted successfully!', 'green');
+            } catch (e) {
+                console.error("Error deleting student: ", e);
+                showMessage('Error deleting student.', 'red');
+            }
+        }
+        
+        // Function to set or update a single attendance record
+        async function setAttendanceRecord(studentId, date, status) {
+            if (!userId) return;
+            const docId = `${studentId}_${date}`; 
+            const attendanceRef = doc(getAttendanceCollectionRef(), docId);
+            
+            try {
+                await setDoc(attendanceRef, {
+                    studentId: studentId,
+                    date: date,
+                    status: status,
+                    timestamp: new Date()
+                }, { merge: true });
+                // UI update happens automatically via the global onSnapshot listener for allAttendanceRecords
+            } catch (e) {
+                console.error("Error setting attendance record: ", e);
+                showMessage('Error saving attendance mark.', 'red');
+            }
+        }
 
-        const topStudentsList =
-          stats.top10Students
-            .map(
-              (s) =>
-                `<li class="text-gray-700">${s.name}: ${s.percentage.toFixed(
-                  1
-                )}%</li>`
-            )
-            .join("") || "<li>No data yet.</li>";
+        async function markMonthPresent(year, month) {
+            if (!userId || students.length === 0) {
+                showMessage("Error: User not authenticated or no students available.", 'red');
+                return;
+            }
+            
+            const startDate = new Date(year, month - 1, 1);
+            const endDate = new Date(year, month, 0); 
+            const daysInMonth = endDate.getDate();
+            const monthName = startDate.toLocaleString('default', { month: 'long' });
 
-        const html = `
+            let batch = writeBatch(db);
+            let totalRecords = 0;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const currentDate = new Date(year, month - 1, day);
+                const dateStr = currentDate.toISOString().slice(0, 10);
+                
+                const dayOfWeek = currentDate.getDay(); // 0=Sun, 6=Sat
+                
+                // Only skip Saturday (6) - School is Sun-Fri
+                if (dayOfWeek === 6) { 
+                     continue;
+                }
+
+                students.forEach(student => {
+                    const docId = `${student.id}_${dateStr}`; 
+                    const attendanceRef = doc(getAttendanceCollectionRef(), docId);
+                    
+                    batch.set(attendanceRef, {
+                        studentId: student.id,
+                        date: dateStr,
+                        status: 'Present',
+                        timestamp: new Date()
+                    }, { merge: true });
+                    totalRecords++;
+
+                    if (totalRecords % 490 === 0) { 
+                        console.log(`Committing intermediate batch...`);
+                        batch.commit();
+                        batch = writeBatch(db); 
+                    }
+                });
+            }
+
+            try {
+                await batch.commit();
+                showMessage(`Successfully marked ${students.length} students Present for all school days (Sun-Fri) in ${monthName} ${year}. Total records processed: ${totalRecords}.`, 'green');
+            } catch (e) {
+                console.error("Batch write error during monthly mark: ", e);
+                showMessage('Error marking monthly attendance. Check console for details.', 'red');
+            }
+        }
+
+
+        // --- DATA LISTENERS ---
+
+        function setupDataListeners() {
+            if (!userId) return;
+            
+            // 1. Student Listener
+            const qStudents = getStudentCollectionRef();
+            onSnapshot(qStudents, (snapshot) => {
+                const newStudents = [];
+                snapshot.forEach(doc => {
+                    newStudents.push({ id: doc.id, ...doc.data() });
+                });
+                students = newStudents.sort((a, b) => a.rollNo - b.rollNo); // Keep sorted
+                
+                // Re-render the current view to reflect new student list/stats
+                renderView(currentView); 
+            }, (error) => {
+                console.error("Error fetching students:", error);
+                showMessage("Could not load student list.", 'red');
+            });
+            
+            // 2. All Attendance Listener (for comprehensive reports/dashboard)
+            const qAttendance = getAttendanceCollectionRef();
+
+            onSnapshot(qAttendance, (snapshot) => {
+                allAttendanceRecords = [];
+                snapshot.forEach(doc => {
+                    allAttendanceRecords.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Re-render reports/dashboard immediately when attendance changes
+                if (currentView === 'dashboard' || currentView === 'reports' || currentView === 'attendance') {
+                    renderView(currentView);
+                }
+            }, (error) => {
+                console.error("Error fetching all attendance records:", error);
+            });
+        }
+
+        // --- DATA CALCULATION ---
+
+        function calculateAttendanceStats() {
+            const stats = {
+                totalStudents: students.length,
+                totalAttendanceDays: 0,
+                totalPresent: 0,
+                totalAbsent: 0,
+                totalLate: 0,
+                totalPublicHolidays: 0,
+                totalPresentUntilLastMonth: 0,
+                studentStats: {} // {studentId: {present, absent, late, publicHoliday, percentage}}
+            };
+
+            const daySet = new Set();
+            const today = new Date();
+            const currentMonthPrefix = today.toISOString().slice(0, 7);
+
+            students.forEach(s => {
+                stats.studentStats[s.id] = { present: 0, absent: 0, late: 0, publicHoliday: 0, totalMarkedDays: 0, percentage: 0 };
+            });
+
+            allAttendanceRecords.forEach(record => {
+                daySet.add(record.date);
+                const studentId = record.studentId;
+                const status = record.status;
+                const recordDatePrefix = record.date.slice(0, 7);
+
+                if (stats.studentStats[studentId]) {
+                    stats.studentStats[studentId].totalMarkedDays++;
+                    
+                    if (status === 'Present') {
+                        stats.totalPresent++;
+                        stats.studentStats[studentId].present++;
+                        if (recordDatePrefix !== currentMonthPrefix) { // Sum Present (P + L) before current month
+                            stats.totalPresentUntilLastMonth++;
+                        }
+                    } else if (status === 'Absent') {
+                        stats.totalAbsent++;
+                        stats.studentStats[studentId].absent++;
+                    } else if (status === 'Late') {
+                        stats.totalLate++;
+                        stats.studentStats[studentId].late++;
+                        if (recordDatePrefix !== currentMonthPrefix) { // Sum Present (P + L) before current month
+                            stats.totalPresentUntilLastMonth++;
+                        }
+                    } else if (status === 'PH') {
+                        stats.totalPublicHolidays++;
+                        stats.studentStats[studentId].publicHoliday++;
+                    }
+                }
+            });
+            
+            stats.totalAttendanceDays = daySet.size;
+
+            // Calculate student percentages and global percentage
+            let totalExpectedMarks = 0; // P + A + L (excluding PH)
+            let totalActualPresent = 0; // P + L
+
+            students.forEach(s => {
+                const studentStat = stats.studentStats[s.id];
+                if (studentStat) {
+                    const expectedMarks = studentStat.present + studentStat.absent + studentStat.late;
+                    totalExpectedMarks += expectedMarks;
+                    totalActualPresent += studentStat.present + studentStat.late;
+                    
+                    if (expectedMarks > 0) {
+                        // Percentage is (Present + Late) / (Present + Absent + Late)
+                        studentStat.percentage = ((studentStat.present + studentStat.late) / expectedMarks) * 100;
+                    }
+                }
+            });
+            
+            stats.globalPercentage = totalExpectedMarks > 0 ? (totalActualPresent / totalExpectedMarks) * 100 : 0;
+            
+            // Determine top 10 students
+            const sortedStudents = students
+                .map(s => ({
+                    name: s.name,
+                    percentage: stats.studentStats[s.id]?.percentage || 0
+                }))
+                .sort((a, b) => b.percentage - a.percentage);
+
+            stats.top10Students = sortedStudents.slice(0, 10);
+
+            return stats;
+        }
+
+
+        // --- UI & STATE MANAGEMENT ---
+
+        function getStatusClasses(status) {
+            return `status-${status.charAt(0)}`;
+        }
+
+        function showMessage(text, color) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `text-sm font-semibold h-5 mt-1 ${color === 'green' ? 'text-green-600' : 'text-red-600'}`;
+            setTimeout(() => messageEl.textContent = '', 4000); 
+        }
+
+        function renderView(viewName) {
+            currentView = viewName;
+            
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active-nav');
+                if (item.dataset.view === viewName) {
+                    item.classList.add('active-nav');
+                    viewTitle.textContent = item.textContent.trim();
+                }
+            });
+
+            viewContainer.innerHTML = '';
+            
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar.classList.contains('translate-x-0') && window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+                overlay.classList.add('hidden');
+            }
+
+
+            switch (viewName) {
+                case 'dashboard':
+                    renderDashboard();
+                    break;
+                case 'students':
+                    renderStudentManagement();
+                    break;
+                case 'attendance':
+                    renderMonthlyAttendance(); // Renamed function
+                    break;
+                case 'reports':
+                    renderReports();
+                    break;
+            }
+        }
+
+        // --- VIEW RENDERING FUNCTIONS ---
+
+        function renderDashboard() {
+            const stats = calculateAttendanceStats();
+            
+            const topStudentsList = stats.top10Students.map(s => 
+                `<li class="text-gray-700">${s.name}: ${s.percentage.toFixed(1)}%</li>`
+            ).join('') || '<li>No data yet.</li>';
+
+            const html = `
                 <div class="space-y-6">
                     <p class="text-xl font-medium text-gray-600">Welcome to the Dashboard! Here's a quick overview of your class data.</p>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
                             <p class="text-sm font-medium text-gray-500">Total Students</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${
-                              stats.totalStudents
-                            }</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-1">${stats.totalStudents}</p>
                         </div>
                         <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
                             <p class="text-sm font-medium text-gray-500">Total Present (Cumulative)</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${
-                              stats.totalPresent + stats.totalLate
-                            }</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-1">${stats.totalPresent + stats.totalLate}</p>
                         </div>
                         <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
                             <p class="text-sm font-medium text-gray-500">Overall Attendance %</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${stats.globalPercentage.toFixed(
-                              1
-                            )}%</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-1">${stats.globalPercentage.toFixed(1)}%</p>
                         </div>
                     </div>
                     
@@ -714,11 +522,11 @@
                     </div>
                 </div>
             `;
-        viewContainer.innerHTML = html;
-      }
+            viewContainer.innerHTML = html;
+        }
 
-      function renderStudentManagement() {
-        viewContainer.innerHTML = `
+        function renderStudentManagement() {
+            viewContainer.innerHTML = `
                 <div class="max-w-3xl mx-auto space-y-6">
                     
                     <!-- Add Student Form -->
@@ -762,93 +570,65 @@
                     <p id="message" class="text-sm font-semibold h-5"></p>
                 </div>
             `;
+            
+            updateStudentListMgmt();
+            
+            document.getElementById('add-student-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('student-name').value.trim();
+                const rollNo = parseInt(document.getElementById('student-rollno').value);
+                if (name && rollNo) {
+                    addStudent(name, rollNo);
+                    e.target.reset(); // Clear form
+                    document.getElementById('student-name').focus(); // **FIXED: Focus back to name field**
+                }
+            });
 
-        updateStudentListMgmt();
+            document.getElementById('student-list-mgmt').addEventListener('click', (e) => {
+                if (e.target.closest('.delete-btn')) {
+                    const studentId = e.target.closest('.delete-btn').dataset.id;
+                    console.log('Confirmation: Are you sure you want to delete this student?');
+                    deleteStudent(studentId);
+                }
+            });
+        }
 
-        document
-          .getElementById("add-student-form")
-          .addEventListener("submit", (e) => {
-            e.preventDefault();
-            const name = document.getElementById("student-name").value.trim();
-            const rollNo = parseInt(
-              document.getElementById("student-rollno").value
-            );
-            if (name && rollNo) {
-              addStudent(name, rollNo);
-              e.target.reset(); // Clear form
-              document.getElementById("student-name").focus(); // **FIXED: Focus back to name field**
-            }
-          });
-
-        document
-          .getElementById("student-list-mgmt")
-          .addEventListener("click", (e) => {
-            if (e.target.closest(".delete-btn")) {
-              const studentId = e.target.closest(".delete-btn").dataset.id;
-              console.log(
-                "Confirmation: Are you sure you want to delete this student?"
-              );
-              deleteStudent(studentId);
-            }
-          });
-      }
-
-      function updateStudentListMgmt() {
-        const listBody = document.getElementById("student-list-mgmt");
-        if (!listBody) return;
-
-        listBody.innerHTML = "";
-        students.forEach((student) => {
-          const row = document.createElement("tr");
-          row.classList.add("hover:bg-gray-50");
-          row.innerHTML = `
+        function updateStudentListMgmt() {
+            const listBody = document.getElementById('student-list-mgmt');
+            if (!listBody) return;
+            
+            listBody.innerHTML = '';
+            students.forEach(student => {
+                    const row = document.createElement('tr');
+                    row.classList.add('hover:bg-gray-50');
+                    row.innerHTML = `
                         <td class="py-3 px-4 sm:px-6 text-gray-900">${student.rollNo}</td>
                         <td class="py-3 px-4 sm:px-6 text-gray-700">${student.name}</td>
                         <td class="py-3 px-4 sm:px-6 text-center">
                             <button class="delete-btn px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-150 text-xs" data-id="${student.id}">Delete</button>
                         </td>
                     `;
-          listBody.appendChild(row);
-        });
-      }
+                    listBody.appendChild(row);
+                });
+        }
 
-      function renderMonthlyAttendance() {
-        const currentYear = monthlyViewDate.getFullYear();
-        const currentMonth = monthlyViewDate.getMonth() + 1; // 1-indexed
-        const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+        function renderMonthlyAttendance() {
+            const currentYear = monthlyViewDate.getFullYear();
+            const currentMonth = monthlyViewDate.getMonth() + 1; // 1-indexed
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            
+            const monthOptions = [
+                { val: 1, name: 'January' }, { val: 2, name: 'February' }, { val: 3, name: 'March' },
+                { val: 4, name: 'April' }, { val: 5, name: 'May' }, { val: 6, name: 'June' },
+                { val: 7, name: 'July' }, { val: 8, name: 'August' }, { val: 9, name: 'September' },
+                { val: 10, name: 'October' }, { val: 11, name: 'November' }, { val: 12, name: 'December' }
+            ].map(m => `<option value="${m.val}" ${m.val === currentMonth ? 'selected' : ''}>${m.name}</option>`).join('');
 
-        const monthOptions = [
-          { val: 1, name: "January" },
-          { val: 2, name: "February" },
-          { val: 3, name: "March" },
-          { val: 4, name: "April" },
-          { val: 5, name: "May" },
-          { val: 6, name: "June" },
-          { val: 7, name: "July" },
-          { val: 8, name: "August" },
-          { val: 9, name: "September" },
-          { val: 10, name: "October" },
-          { val: 11, name: "November" },
-          { val: 12, name: "December" },
-        ]
-          .map(
-            (m) =>
-              `<option value="${m.val}" ${
-                m.val === currentMonth ? "selected" : ""
-              }>${m.name}</option>`
-          )
-          .join("");
+            const yearOptions = [currentYear - 1, currentYear, currentYear + 1].map(y => 
+                `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`
+            ).join('');
 
-        const yearOptions = [currentYear - 1, currentYear, currentYear + 1]
-          .map(
-            (y) =>
-              `<option value="${y}" ${
-                y === currentYear ? "selected" : ""
-              }>${y}</option>`
-          )
-          .join("");
-
-        viewContainer.innerHTML = `
+            viewContainer.innerHTML = `
                 <div class="space-y-6">
                     <p id="message" class="text-sm font-semibold h-5"></p>
                     
@@ -885,37 +665,18 @@
                                 <tr>
                                     <th scope="col" class="py-3 px-3 w-20 min-w-[80px] font-bold sticky left-0 bg-indigo-600 border-r border-indigo-700">Roll No.</th>
                                     <th scope="col" class="py-3 px-3 w-40 min-w-[150px] font-bold sticky left-[80px] bg-indigo-600">Student Name</th>
-                                    ${Array.from(
-                                      { length: daysInMonth },
-                                      (_, i) => i + 1
-                                    )
-                                      .map((day) => {
-                                        const date = new Date(
-                                          currentYear,
-                                          currentMonth - 1,
-                                          day
-                                        );
+                                    ${Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+                                        const date = new Date(currentYear, currentMonth - 1, day);
                                         const dayIndex = date.getDay(); // 0=Sun, 6=Sat
-                                        const dayNames = [
-                                          "S",
-                                          "M",
-                                          "T",
-                                          "W",
-                                          "T",
-                                          "F",
-                                          "S",
-                                        ]; // Sun to Sat
+                                        const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S']; // Sun to Sat
                                         const dayName = dayNames[dayIndex];
                                         const isHoliday = dayIndex === 6; // **FIXED: Saturday is Holiday**
-
-                                        return `<th scope="col" class="py-1 px-1 day-header calendar-cell ${
-                                          isHoliday ? "holiday" : ""
-                                        } h-full">
+                                        
+                                        return `<th scope="col" class="py-1 px-1 day-header calendar-cell ${isHoliday ? 'holiday' : ''} h-full">
                                                     <div class="text-[0.6rem] font-normal">${dayName}</div>
                                                     <div class="text-xs font-bold">${day}</div>
                                                 </th>`;
-                                      })
-                                      .join("")}
+                                    }).join('')}
                                 </tr>
                             </thead>
                             <tbody id="monthly-calendar-body" class="divide-y divide-gray-200">
@@ -928,289 +689,204 @@
                     </div>
                 </div>
             `;
+            
+            // Attach event listeners for month/year change
+            document.getElementById('monthly-select-month').addEventListener('change', updateMonthlyViewDate);
+            document.getElementById('monthly-select-year').addEventListener('change', updateMonthlyViewDate);
+            document.getElementById('monthly-mark-btn').addEventListener('click', handleMonthlyMark);
 
-        // Attach event listeners for month/year change
-        document
-          .getElementById("monthly-select-month")
-          .addEventListener("change", updateMonthlyViewDate);
-        document
-          .getElementById("monthly-select-year")
-          .addEventListener("change", updateMonthlyViewDate);
-        document
-          .getElementById("monthly-mark-btn")
-          .addEventListener("click", handleMonthlyMark);
+            // Attach click listener to the table body for cell updates (delegation)
+            document.getElementById('monthly-calendar-body').addEventListener('click', handleAttendanceCellClick);
 
-        // Attach click listener to the table body for cell updates (delegation)
-        document
-          .getElementById("monthly-calendar-body")
-          .addEventListener("click", handleAttendanceCellClick);
-
-        // Initial render of the calendar body
-        renderMonthlyCalendarBody();
-      }
-
-      // Helper to handle month/year dropdown changes
-      function updateMonthlyViewDate() {
-        const month = parseInt(
-          document.getElementById("monthly-select-month").value
-        );
-        const year = parseInt(
-          document.getElementById("monthly-select-year").value
-        );
-        monthlyViewDate = new Date(year, month - 1); // Month is 0-indexed in JS Date object
-        renderMonthlyAttendance(); // Re-render the entire view
-      }
-
-      // Helper to handle monthly mark button click
-      function handleMonthlyMark() {
-        const month = parseInt(
-          document.getElementById("monthly-select-month").value
-        );
-        const year = parseInt(
-          document.getElementById("monthly-select-year").value
-        );
-
-        if (students.length === 0) {
-          showMessage("Cannot mark: No students available.", "red");
-          return;
+            // Initial render of the calendar body
+            renderMonthlyCalendarBody();
+        }
+        
+        // Helper to handle month/year dropdown changes
+        function updateMonthlyViewDate() {
+            const month = parseInt(document.getElementById('monthly-select-month').value);
+            const year = parseInt(document.getElementById('monthly-select-year').value);
+            monthlyViewDate = new Date(year, month - 1); // Month is 0-indexed in JS Date object
+            renderMonthlyAttendance(); // Re-render the entire view
         }
 
-        const monthName = new Date(year, month - 1).toLocaleString("default", {
-          month: "long",
-        });
-        console.log(
-          `Confirmation required: Are you sure you want to mark ALL ${students.length} students as 'Present' for all school days (Sun-Fri) in ${monthName} ${year}? This will overwrite existing records.`
-        );
-
-        markMonthPresent(year, month);
-      }
-
-      // Helper to handle attendance cell clicks (toggle status)
-      function handleAttendanceCellClick(event) {
-        const cell = event.target.closest(".attendance-mark");
-        if (!cell || cell.classList.contains("holiday")) return; // **FIXED: check for .holiday class**
-
-        const studentId = cell.dataset.studentId;
-        const date = cell.dataset.date;
-        const currentStatus = cell.dataset.status;
-
-        let newStatus;
-        switch (currentStatus) {
-          case "P":
-            newStatus = "Absent";
-            break;
-          case "A":
-            newStatus = "Late";
-            break;
-          case "L":
-            newStatus = "PH";
-            break; // **NEW: Public Holiday**
-          case "PH":
-            newStatus = "Unmarked";
-            break; // Unmarked
-          default:
-            newStatus = "Present"; // If 'U' (Unmarked)
+        // Helper to handle monthly mark button click
+        function handleMonthlyMark() {
+             const month = parseInt(document.getElementById('monthly-select-month').value);
+             const year = parseInt(document.getElementById('monthly-select-year').value);
+             
+             if (students.length === 0) {
+                 showMessage("Cannot mark: No students available.", 'red');
+                 return;
+             }
+             
+             const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
+             console.log(`Confirmation required: Are you sure you want to mark ALL ${students.length} students as 'Present' for all school days (Sun-Fri) in ${monthName} ${year}? This will overwrite existing records.`);
+             
+             markMonthPresent(year, month);
         }
 
-        // Update Firestore
-        setAttendanceRecord(studentId, date, newStatus);
-        // UI update happens automatically via the global onSnapshot listener for allAttendanceRecords
-      }
+        // Helper to handle attendance cell clicks (toggle status)
+        function handleAttendanceCellClick(event) {
+            const cell = event.target.closest('.attendance-mark');
+            if (!cell || cell.classList.contains('holiday')) return; // **FIXED: check for .holiday class**
 
-      // Primary function to populate the monthly calendar table
-      function renderMonthlyCalendarBody() {
-        const listBody = document.getElementById("monthly-calendar-body");
-        const noStudentsMessage = document.getElementById(
-          "no-students-message"
-        );
-        if (!listBody) return;
-
-        listBody.innerHTML = "";
-
-        if (students.length === 0) {
-          noStudentsMessage.classList.remove("hidden");
-          return;
-        }
-        noStudentsMessage.classList.add("hidden");
-
-        const currentYear = monthlyViewDate.getFullYear();
-        const currentMonth = monthlyViewDate.getMonth() + 1;
-        const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-        const datePrefix = `${currentYear}-${String(currentMonth).padStart(
-          2,
-          "0"
-        )}-`;
-
-        // 1. Create a quick lookup map for attendance records in this month
-        const attendanceMap = allAttendanceRecords.reduce((acc, record) => {
-          if (record.date.startsWith(datePrefix)) {
-            if (!acc[record.studentId]) {
-              acc[record.studentId] = {};
+            const studentId = cell.dataset.studentId;
+            const date = cell.dataset.date;
+            const currentStatus = cell.dataset.status;
+            
+            let newStatus;
+            switch(currentStatus) {
+                case 'P': newStatus = 'Absent'; break;
+                case 'A': newStatus = 'Late'; break;
+                case 'L': newStatus = 'PH'; break; // **NEW: Public Holiday**
+                case 'PH': newStatus = 'Unmarked'; break; // Unmarked
+                default: newStatus = 'Present'; // If 'U' (Unmarked)
             }
-            acc[record.studentId][record.date.slice(8, 10)] =
-              record.status.charAt(0); // 'P', 'A', 'L', 'PH'
-          }
-          return acc;
-        }, {});
+            
+            // Update Firestore
+            setAttendanceRecord(studentId, date, newStatus);
+            // UI update happens automatically via the global onSnapshot listener for allAttendanceRecords
+        }
 
-        // 2. Build the table rows
-        students.forEach((student) => {
-          const row = document.createElement("tr");
-          row.classList.add("hover:bg-gray-50", "transition", "duration-150");
+        // Primary function to populate the monthly calendar table
+        function renderMonthlyCalendarBody() {
+            const listBody = document.getElementById('monthly-calendar-body');
+            const noStudentsMessage = document.getElementById('no-students-message');
+            if (!listBody) return;
+            
+            listBody.innerHTML = '';
 
-          let cellsHtml = `
+            if (students.length === 0) {
+                 noStudentsMessage.classList.remove('hidden');
+                 return;
+            }
+            noStudentsMessage.classList.add('hidden');
+
+            const currentYear = monthlyViewDate.getFullYear();
+            const currentMonth = monthlyViewDate.getMonth() + 1;
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            const datePrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}-`;
+            
+            // 1. Create a quick lookup map for attendance records in this month
+            const attendanceMap = allAttendanceRecords.reduce((acc, record) => {
+                if (record.date.startsWith(datePrefix)) {
+                    if (!acc[record.studentId]) {
+                        acc[record.studentId] = {};
+                    }
+                    acc[record.studentId][record.date.slice(8, 10)] = record.status.charAt(0); // 'P', 'A', 'L', 'PH'
+                }
+                return acc;
+            }, {});
+
+            // 2. Build the table rows
+            students.forEach(student => {
+                const row = document.createElement('tr');
+                row.classList.add('hover:bg-gray-50', 'transition', 'duration-150');
+                
+                let cellsHtml = `
                     <td class="py-3 px-3 w-20 min-w-[80px] font-medium text-gray-900 sticky left-0 bg-white border-r border-gray-200">${student.rollNo}</td>
                     <td class="py-3 px-3 w-40 min-w-[150px] text-gray-700 sticky left-[80px] bg-white">${student.name}</td>
                 `;
 
-          for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = datePrefix + String(day).padStart(2, "0");
-            const date = new Date(currentYear, currentMonth - 1, day);
-            const isHoliday = date.getDay() === 6; // **FIXED: Saturday is Holiday**
-
-            const dayKey = String(day).padStart(2, "0");
-            const status = attendanceMap[student.id]?.[dayKey] || "U"; // U for Unmarked
-            const statusClass = getStatusClasses(status);
-
-            cellsHtml += `
-                        <td class="calendar-cell attendance-mark border border-gray-100 ${statusClass} ${
-              isHoliday ? "holiday" : ""
-            }" 
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = datePrefix + String(day).padStart(2, '0');
+                    const date = new Date(currentYear, currentMonth - 1, day);
+                    const isHoliday = date.getDay() === 6; // **FIXED: Saturday is Holiday**
+                    
+                    const dayKey = String(day).padStart(2, '0');
+                    const status = attendanceMap[student.id]?.[dayKey] || 'U'; // U for Unmarked
+                    const statusClass = getStatusClasses(status);
+                    
+                    cellsHtml += `
+                        <td class="calendar-cell attendance-mark border border-gray-100 ${statusClass} ${isHoliday ? 'holiday' : ''}" 
                             data-student-id="${student.id}" 
                             data-date="${dateStr}" 
                             data-status="${status}"
-                            title="${dateStr} - ${student.name} - ${
-              status === "U" ? "Unmarked" : status
-            }">
-                            ${isHoliday ? "-" : status}
+                            title="${dateStr} - ${student.name} - ${status === 'U' ? 'Unmarked' : status}">
+                            ${isHoliday ? '-' : status}
                         </td>
                     `;
-          }
+                }
 
-          row.innerHTML = cellsHtml;
-          listBody.appendChild(row);
-        });
-      }
+                row.innerHTML = cellsHtml;
+                listBody.appendChild(row);
+            });
+        }
 
-      function renderReports() {
-        const stats = calculateAttendanceStats();
 
-        // Simplified logic for current month attendance
-        const currentYear = new Date().getFullYear();
-        const currentMonth = new Date().getMonth() + 1; // 1-indexed
+        function renderReports() {
+            const stats = calculateAttendanceStats();
+            
+            // Simplified logic for current month attendance
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1; // 1-indexed
 
-        const monthlyAttendanceMap = {}; // {studentId: {P: count, A: count, L: count, PH: count}}
+            const monthlyAttendanceMap = {}; // {studentId: {P: count, A: count, L: count, PH: count}}
 
-        allAttendanceRecords.forEach((record) => {
-          const date = new Date(record.date);
-          if (
-            date.getFullYear() === currentYear &&
-            date.getMonth() + 1 === currentMonth
-          ) {
-            if (!monthlyAttendanceMap[record.studentId]) {
-              monthlyAttendanceMap[record.studentId] = {
-                P: 0,
-                A: 0,
-                L: 0,
-                PH: 0,
-                total: 0,
-              };
-            }
-            const statusKey = record.status.charAt(0);
-            if (monthlyAttendanceMap[record.studentId][statusKey]) {
-              monthlyAttendanceMap[record.studentId][statusKey]++;
-            }
-            monthlyAttendanceMap[record.studentId].total++;
-          }
-        });
+            allAttendanceRecords.forEach(record => {
+                const date = new Date(record.date);
+                if (date.getFullYear() === currentYear && date.getMonth() + 1 === currentMonth) {
+                    if (!monthlyAttendanceMap[record.studentId]) {
+                        monthlyAttendanceMap[record.studentId] = { P: 0, A: 0, L: 0, PH: 0, total: 0 };
+                    }
+                    const statusKey = record.status.charAt(0);
+                    if (monthlyAttendanceMap[record.studentId][statusKey]) {
+                        monthlyAttendanceMap[record.studentId][statusKey]++;
+                    }
+                    monthlyAttendanceMap[record.studentId].total++;
+                }
+            });
 
-        // Calculate overall month percentage
-        let monthTotalExpectedMarks = 0;
-        let monthTotalActualPresent = 0;
-        Object.values(monthlyAttendanceMap).forEach((m) => {
-          const expected = m.P + m.A + m.L;
-          monthTotalExpectedMarks += expected;
-          monthTotalActualPresent += m.P + m.L;
-        });
-        const monthPercentage =
-          monthTotalExpectedMarks > 0
-            ? (monthTotalActualPresent / monthTotalExpectedMarks) * 100
-            : 0;
+            // Calculate overall month percentage
+            let monthTotalExpectedMarks = 0;
+            let monthTotalActualPresent = 0;
+            Object.values(monthlyAttendanceMap).forEach(m => {
+                const expected = m.P + m.A + m.L;
+                monthTotalExpectedMarks += expected;
+                monthTotalActualPresent += m.P + m.L;
+            });
+            const monthPercentage = monthTotalExpectedMarks > 0 ? (monthTotalActualPresent / monthTotalExpectedMarks) * 100 : 0;
 
-        const studentRows = students
-          .map((s) => {
-            const sStats = stats.studentStats[s.id];
-            const sMonthStats = monthlyAttendanceMap[s.id] || {
-              P: 0,
-              A: 0,
-              L: 0,
-              PH: 0,
-              total: 0,
-            };
-            const percentage = sStats?.percentage || 0;
 
-            return `
+            const studentRows = students.map(s => {
+                const sStats = stats.studentStats[s.id];
+                const sMonthStats = monthlyAttendanceMap[s.id] || { P: 0, A: 0, L: 0, PH: 0, total: 0 };
+                const percentage = sStats?.percentage || 0;
+                
+                return `
                     <tr class="hover:bg-gray-50">
-                        <td class="py-3 px-4 sm:px-6 font-medium text-gray-900">${
-                          s.rollNo
-                        }</td>
-                        <td class="py-3 px-4 sm:px-6 text-gray-700">${
-                          s.name
-                        }</td>
-                        <td class="py-3 px-4 text-center">${
-                          sMonthStats.P + sMonthStats.L
-                        }</td>
+                        <td class="py-3 px-4 sm:px-6 font-medium text-gray-900">${s.rollNo}</td>
+                        <td class="py-3 px-4 sm:px-6 text-gray-700">${s.name}</td>
+                        <td class="py-3 px-4 text-center">${sMonthStats.P + sMonthStats.L}</td>
                         <td class="py-3 px-4 text-center">${sMonthStats.A}</td>
-                        <td class="py-3 px-4 text-center">${
-                          sStats ? sStats.present + sStats.late : 0
-                        }</td>
-                        <td class="py-3 px-4 text-center">${
-                          stats.totalPresentUntilLastMonth
-                        }</td>
-                        <td class="py-3 px-4 font-bold text-center ${
-                          percentage > 90
-                            ? "text-green-600"
-                            : percentage > 70
-                            ? "text-yellow-600"
-                            : "text-red-600"
-                        }">${percentage.toFixed(1)}%</td>
+                        <td class="py-3 px-4 text-center">${sStats ? sStats.present + sStats.late : 0}</td>
+                        <td class="py-3 px-4 text-center">${stats.totalPresentUntilLastMonth}</td>
+                        <td class="py-3 px-4 font-bold text-center ${percentage > 90 ? 'text-green-600' : percentage > 70 ? 'text-yellow-600' : 'text-red-600'}">${percentage.toFixed(1)}%</td>
                     </tr>
                 `;
-          })
-          .join("");
+            }).join('');
 
-        viewContainer.innerHTML = `
+
+            viewContainer.innerHTML = `
                 <div class="space-y-6">
                     <p class="text-xl font-medium text-gray-600">Detailed attendance analysis.</p>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
                             <p class="text-sm font-medium text-gray-500">Present Month Attendance</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${monthPercentage.toFixed(
-                              1
-                            )}%</p>
-                            <p class="text-xs text-gray-400">(${new Date().toLocaleString(
-                              "default",
-                              { month: "long", year: "numeric" }
-                            )})</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-1">${monthPercentage.toFixed(1)}%</p>
+                            <p class="text-xs text-gray-400">(${new Date().toLocaleString('default', { month: 'long', year: 'numeric' })})</p>
                         </div>
                         <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
                             <p class="text-sm font-medium text-gray-500">Total Present (P + L)</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${
-                              stats.totalPresent + stats.totalLate
-                            }</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-1">${stats.totalPresent + stats.totalLate}</p>
                             <p class="text-xs text-gray-400">All recorded time.</p>
                         </div>
                         <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
                             <p class="text-sm font-medium text-gray-500">Overall Attendance Rate</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${stats.globalPercentage.toFixed(
-                              1
-                            )}%</p>
-                            <p class="text-xs text-gray-400">(${
-                              stats.totalPresent + stats.totalLate
-                            } / ${
-          stats.totalPresent + stats.totalAbsent + stats.totalLate
-        } expected records)</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-1">${stats.globalPercentage.toFixed(1)}%</p>
+                            <p class="text-xs text-gray-400">(${stats.totalPresent + stats.totalLate} / ${stats.totalPresent + stats.totalAbsent + stats.totalLate} expected records)</p>
                         </div>
                     </div>
 
@@ -1229,53 +905,47 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
-                                    ${
-                                      studentRows ||
-                                      '<tr><td colspan="7" class="py-4 text-center text-gray-500">No student data to display.</td></tr>'
-                                    }
+                                    ${studentRows || '<tr><td colspan="7" class="py-4 text-center text-gray-500">No student data to display.</td></tr>'}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             `;
-      }
-
-      // --- INITIALIZATION & LISTENERS ---
-
-      // 3. Sidebar Navigation Listener
-      document.querySelectorAll(".menu-item").forEach((item) => {
-        item.addEventListener("click", (e) => {
-          e.preventDefault();
-          const view = e.currentTarget.dataset.view;
-          renderView(view);
+        }
+        
+        // --- INITIALIZATION & LISTENERS ---
+        
+        // 3. Sidebar Navigation Listener
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const view = e.currentTarget.dataset.view;
+                renderView(view);
+            });
         });
-      });
-
-      // 4. Mobile Menu Toggle
-      document
-        .getElementById("mobile-menu-btn")
-        .addEventListener("click", () => {
-          const sidebar = document.getElementById("sidebar");
-          const overlay = document.getElementById("sidebar-overlay");
-          sidebar.classList.toggle("-translate-x-full");
-          sidebar.classList.toggle("translate-x-0");
-          overlay.classList.toggle("hidden");
+        
+        // 4. Mobile Menu Toggle
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            sidebar.classList.toggle('translate-x-0');
+            overlay.classList.toggle('hidden');
         });
 
-      // 5. Overlay Click to Close Sidebar
-      document
-        .getElementById("sidebar-overlay")
-        .addEventListener("click", () => {
-          document.getElementById("sidebar").classList.add("-translate-x-full");
-          document.getElementById("sidebar").classList.remove("translate-x-0");
-          document.getElementById("sidebar-overlay").classList.add("hidden");
+        // 5. Overlay Click to Close Sidebar
+        document.getElementById('sidebar-overlay').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('sidebar').classList.remove('translate-x-0');
+            document.getElementById('sidebar-overlay').classList.add('hidden');
         });
 
-      // 6. Initial Load: Call the initialization function when the window loads
-      window.onload = function () {
-        initializeFirebase();
-      };
+        // 6. Initial Load: Call the initialization function when the window loads
+        window.onload = function() {
+            initializeFirebase();
+        };
+
     </script>
-  </body>
+</body>
 </html>
