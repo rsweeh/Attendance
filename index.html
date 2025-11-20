@@ -520,7 +520,7 @@
           totalLate: 0,
           totalPublicHolidays: 0,
           totalPresentUntilLastMonth: 0,
-          studentStats: {}, // {studentId: {present, absent, late, publicHoliday, percentage}}
+          studentStats: {}, // {studentId: {present, absent, late, publicHoliday, percentage, presentThisMonth, presentTillLastMonth}}
         };
 
         const daySet = new Set();
@@ -535,6 +535,8 @@
             publicHoliday: 0,
             totalMarkedDays: 0,
             percentage: 0,
+            presentThisMonth: 0, 
+            presentTillLastMonth: 0,
           };
         });
 
@@ -545,28 +547,34 @@
           const recordDatePrefix = record.date.slice(0, 7);
 
           if (stats.studentStats[studentId]) {
-            stats.studentStats[studentId].totalMarkedDays++;
+            const studentStat = stats.studentStats[studentId];
+            studentStat.totalMarkedDays++;
+
+            const isPresentOrLate = status === "Present" || status === "Late";
+            const isLastMonthOrEarlier = recordDatePrefix !== currentMonthPrefix;
 
             if (status === "Present") {
               stats.totalPresent++;
-              stats.studentStats[studentId].present++;
-              if (recordDatePrefix !== currentMonthPrefix) {
-                // Sum Present (P + L) before current month
-                stats.totalPresentUntilLastMonth++;
-              }
+              studentStat.present++;
             } else if (status === "Absent") {
               stats.totalAbsent++;
-              stats.studentStats[studentId].absent++;
+              studentStat.absent++;
             } else if (status === "Late") {
               stats.totalLate++;
-              stats.studentStats[studentId].late++;
-              if (recordDatePrefix !== currentMonthPrefix) {
-                // Sum Present (P + L) before current month
-                stats.totalPresentUntilLastMonth++;
-              }
+              studentStat.late++;
             } else if (status === "PH") {
               stats.totalPublicHolidays++;
-              stats.studentStats[studentId].publicHoliday++;
+              studentStat.publicHoliday++;
+            }
+
+            // Calculate present counts for reporting columns
+            if (isPresentOrLate) {
+                if (isLastMonthOrEarlier) {
+                    studentStat.presentTillLastMonth++;
+                    stats.totalPresentUntilLastMonth++;
+                } else {
+                    studentStat.presentThisMonth++;
+                }
             }
           }
         });
@@ -584,6 +592,9 @@
               studentStat.present + studentStat.absent + studentStat.late;
             totalExpectedMarks += expectedMarks;
             totalActualPresent += studentStat.present + studentStat.late;
+            
+            // Total Present is the sum of all P + L
+            studentStat.totalPresent = studentStat.present + studentStat.late;
 
             if (expectedMarks > 0) {
               // Percentage is (Present + Late) / (Present + Absent + Late)
@@ -1142,13 +1153,11 @@
         const studentRows = students
           .map((s) => {
             const sStats = stats.studentStats[s.id];
-            const sMonthStats = monthlyAttendanceMap[s.id] || {
-              P: 0,
-              A: 0,
-              L: 0,
-              PH: 0,
-              total: 0,
-            };
+            
+            // Get the calculated monthly and cumulative stats
+            const presentThisMonth = sStats?.presentThisMonth || 0;
+            const presentTillLastMonth = sStats?.presentTillLastMonth || 0;
+            const totalPresent = presentThisMonth + presentTillLastMonth; // Sum of the two required columns
             const percentage = sStats?.percentage || 0;
 
             return `
@@ -1159,16 +1168,9 @@
                         <td class="py-3 px-4 sm:px-6 text-gray-700">${
                           s.name
                         }</td>
-                        <td class="py-3 px-4 text-center">${
-                          sMonthStats.P + sMonthStats.L
-                        }</td>
-                        <td class="py-3 px-4 text-center">${sMonthStats.A}</td>
-                        <td class="py-3 px-4 text-center">${
-                          sStats ? sStats.present + sStats.late : 0
-                        }</td>
-                        <td class="py-3 px-4 text-center">${
-                          stats.totalPresentUntilLastMonth
-                        }</td>
+                        <td class="py-3 px-4 text-center text-indigo-600 font-semibold">${presentThisMonth}</td>
+                        <td class="py-3 px-4 text-center text-indigo-600 font-semibold">${presentTillLastMonth}</td>
+                        <td class="py-3 px-4 text-center font-extrabold text-green-700">${totalPresent}</td>
                         <td class="py-3 px-4 font-bold text-center ${
                           percentage > 90
                             ? "text-green-600"
@@ -1187,7 +1189,7 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
-                            <p class="text-sm font-medium text-gray-500">Present Month Attendance</p>
+                            <p class="text-sm font-medium text-gray-500">Present Month Attendance Rate</p>
                             <p class="text-3xl font-bold text-gray-900 mt-1">${monthPercentage.toFixed(
                               1
                             )}%</p>
@@ -1224,9 +1226,9 @@
                                     <tr>
                                         <th class="py-3 px-4 font-bold text-gray-600">Roll No.</th>
                                         <th class="py-3 px-4 font-bold text-gray-600">Name</th>
-                                        <th class="py-3 px-4 font-bold text-gray-600 text-center" colspan="2">This Month (P/A)</th>
-                                        <th class="py-3 px-4 font-bold text-gray-600 text-center">Total Present (P+L)</th>
+                                        <th class="py-3 px-4 font-bold text-gray-600 text-center">This Month (P+L)</th>
                                         <th class="py-3 px-4 font-bold text-gray-600 text-center">Present Till Last Month (P+L)</th>
+                                        <th class="py-3 px-4 font-bold text-gray-600 text-center">Total Present (P+L)</th>
                                         <th class="py-3 px-4 font-bold text-gray-600 text-center">Overall %</th>
                                     </tr>
                                 </thead>
