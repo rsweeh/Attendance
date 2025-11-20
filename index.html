@@ -30,16 +30,22 @@
       }
       /* Style for the calendar cell */
       .calendar-cell {
-        width: 40px; /* Fixed width for date columns */
-        min-width: 40px;
+        width: 32px; /* Adjusted fixed width for smaller screens (was 40px) */
+        min-width: 32px;
         height: 40px;
         text-align: center;
         padding: 0;
         cursor: pointer;
         transition: background-color 0.1s;
-        font-size: 0.75rem; /* text-xs */
+        font-size: 0.7rem; /* text-xs equivalent */
         font-weight: 600;
         line-height: 1; /* Adjust line height for the two lines of text */
+      }
+      /* Ensure date headers are also sized correctly */
+      .calendar-header-cell {
+          width: 32px;
+          min-width: 32px;
+          padding: 4px 0;
       }
       .calendar-cell:hover:not(.day-header):not(.holiday) {
         background-color: #e5e7eb; /* gray-200 */
@@ -90,6 +96,66 @@
           #sidebar {
               display: none;
           }
+      }
+      /* Style for clickable test link */
+      .exam-batch-link {
+          cursor: pointer;
+          color: #4f46e5; /* indigo-600 */
+          font-weight: 600;
+          text-decoration: underline;
+      }
+      .exam-batch-link:hover {
+          color: #3730a3; /* indigo-800 */
+      }
+      
+      /* Style for the improved Report tabs */
+      .report-tab-btn-style {
+          padding: 8px 16px;
+          border-radius: 9999px; /* Pill shape */
+          font-weight: 600;
+          transition: background-color 0.15s, color 0.15s;
+          border: 1px solid transparent;
+      }
+      .report-tab-btn-style.active {
+          background-color: #4f46e5; /* indigo-600 */
+          color: white;
+          border-color: #4f46e5;
+      }
+      .report-tab-btn-style:not(.active):hover {
+          background-color: #e0e7ff; /* indigo-100 */
+          color: #3730a3; /* indigo-800 */
+      }
+
+      /* Sticky Column Styles for Monthly Attendance */
+      .sticky-col-roll {
+          position: sticky;
+          left: 0;
+          z-index: 10;
+          background-color: inherit;
+          border-right: 1px solid #e5e7eb; /* gray-200 */
+      }
+      .sticky-col-name {
+          position: sticky;
+          left: 32px; /* Roll No width */
+          z-index: 10;
+          background-color: inherit;
+          border-right: 1px solid #e5e7eb;
+      }
+      /* Ensure sticky column backgrounds are correct in the header */
+      #monthly-attendance-header .sticky-col-roll {
+          background-color: #4f46e5 !important; /* indigo-600 */
+          left: 0;
+          border-right: 1px solid #3730a3; /* indigo-800 */
+      }
+      #monthly-attendance-header .sticky-col-name {
+          background-color: #4f46e5 !important; /* indigo-600 */
+          left: 32px;
+          border-right: none;
+      }
+      /* Ensure body sticky columns have white background */
+      #monthly-calendar-body .sticky-col-roll,
+      #monthly-calendar-body .sticky-col-name {
+          background-color: white !important;
       }
     </style>
   </head>
@@ -192,6 +258,27 @@
                 </svg>
                 Reports
               </a>
+              <a
+                href="#"
+                data-view="exams"
+                class="menu-item desktop-nav flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
+              >
+                <svg
+                  class="w-5 h-5 mr-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                  ></path>
+                </svg>
+                Exam Results
+              </a>
             </nav>
           </div>
         </div>
@@ -238,12 +325,31 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0h6"></path></svg>
                 Reports
             </a>
+            <a href="#" data-view="exams" class="menu-item mobile-nav-item text-gray-500">
+                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                Exams
+            </a>
             <div class="mobile-nav-item" id="mobile-status-container">
                 <p class="text-[0.6rem] text-gray-400">Status:</p>
                 <p id="mobile-user-status" class="text-[0.6rem] font-semibold text-gray-500">...</p>
             </div>
       </div>
 
+    </div>
+    
+    <!-- Modal Container (Hidden by default) -->
+    <div id="exam-details-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all duration-300">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 id="modal-title" class="text-xl font-bold text-indigo-700">Exam Results Details</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-800">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="modal-content" class="p-6">
+                <!-- Detailed results table will be loaded here -->
+            </div>
+        </div>
     </div>
 
     <!-- Firebase Imports -->
@@ -286,9 +392,11 @@
       let db, auth; // Declare Firebase instances globally
       let students = []; // Holds all student records
       let allAttendanceRecords = []; // Holds all attendance records for reporting
+      let allExamRecords = []; // **NEW: Holds all exam records**
       let currentView = "dashboard";
       let userId = null;
       let monthlyViewDate = new Date(); // Tracks the currently viewed month/year
+      let weeklyViewOffset = 0; // **NEW: Tracks the current week offset (0 = current week)**
 
       // DOM Elements
       const viewContainer = document.getElementById("view-container");
@@ -296,6 +404,8 @@
       const userStatusEl = document.getElementById("user-status"); // Desktop status
       const userIdDisplayEl = document.getElementById("user-id-display"); // Desktop User ID
       const mobileUserStatusEl = document.getElementById("mobile-user-status"); // Mobile status
+      const examDetailsModal = document.getElementById('exam-details-modal');
+
 
       // --- FIREBASE INITIALIZATION ---
 
@@ -346,6 +456,16 @@
           "data",
           "attendance_records"
         );
+      const getExamCollectionRef = () =>
+        collection(
+          db,
+          "artifacts",
+          DEPLOYMENT_APP_ID,
+          "public",
+          "data",
+          "exam_results"
+        );
+
 
       async function handleAuth() {
         try {
@@ -487,6 +607,104 @@
         }
       }
 
+      async function saveExamResults(subject, type, maxMarks, date, scores) {
+        if (!userId) {
+          showMessage("Error: User not authenticated.", "red");
+          return;
+        }
+        if (students.length === 0) {
+          showMessage("Error: No students to score.", "red");
+          return;
+        }
+
+        // Generate a unique ID for this exam batch
+        const examBatchId = `${subject}_${type}_${date}`.replace(/\s/g, '_');
+        
+        let batch = writeBatch(db);
+        let validScores = 0;
+
+        students.forEach(student => {
+            const score = scores[student.id];
+            
+            // Only save if a score was entered
+            if (score !== undefined && score !== null && score !== "") {
+                const docId = `${examBatchId}_${student.id}`;
+                const examRef = doc(getExamCollectionRef(), docId);
+                
+                batch.set(examRef, {
+                    examBatchId: examBatchId,
+                    studentId: student.id,
+                    studentName: student.name,
+                    subject: subject,
+                    type: type,
+                    date: date,
+                    maxMarks: parseInt(maxMarks),
+                    score: parseFloat(score),
+                    timestamp: new Date(),
+                });
+                validScores++;
+            }
+        });
+
+        if (validScores === 0) {
+            showMessage("Please enter at least one student's score to save the results.", "red");
+            return;
+        }
+
+        try {
+            await batch.commit();
+            showMessage(`Successfully saved results for ${validScores} students for ${subject} (${type}).`, "green");
+            // Optionally clear the form or reset the view
+            renderExamResults(); 
+        } catch (e) {
+            console.error("Batch write error during exam results save: ", e);
+            showMessage("Error saving exam results. Check console.", "red");
+        }
+      }
+      
+      // --- FIX: Updated Function to delete an entire Exam Batch ---
+      window.deleteExamBatch = async function(batchId, subject, type) {
+          console.log(`[DELETE] Attempting to delete batch ID: ${batchId}`);
+          
+          if (!userId) {
+              showMessage("User not authenticated. Cannot delete.", "red");
+              console.error("[DELETE] Error: User not authenticated.");
+              return;
+          }
+          
+          if (confirm(`Are you sure you want to permanently delete ALL results for the exam: ${subject} - ${type}? This action cannot be undone.`)) {
+              
+              const recordsToDelete = allExamRecords.filter(r => r.examBatchId === batchId);
+              
+              if (recordsToDelete.length === 0) {
+                  showMessage("Error: No records found for this batch.", "red");
+                  console.warn(`[DELETE] Warning: No records found in cache for batch ID: ${batchId}`);
+                  return;
+              }
+              
+              console.log(`[DELETE] Found ${recordsToDelete.length} records. Starting batch write deletion.`);
+
+              let batch = writeBatch(db);
+              recordsToDelete.forEach(record => {
+                  const docRef = doc(getExamCollectionRef(), record.id);
+                  batch.delete(docRef);
+                  console.log(`[DELETE] Queued document for deletion: ${record.id}`);
+              });
+              
+              try {
+                  await batch.commit();
+                  showMessage(`Successfully deleted ${recordsToDelete.length} records for ${subject} - ${type}.`, "green");
+                  console.log(`[DELETE] Batch commit successful.`);
+                  // The onSnapshot listener will handle the UI update automatically
+              } catch (e) {
+                  console.error("[DELETE] Error deleting exam batch:", e);
+                  showMessage("Error deleting exam records. Check console.", "red");
+              }
+          } else {
+               console.log("[DELETE] Deletion cancelled by user.");
+          }
+      }
+
       // --- DATA LISTENERS ---
 
       function setupDataListeners() {
@@ -534,6 +752,25 @@
           },
           (error) => {
             console.error("Error fetching all attendance records:", error);
+          }
+        );
+        
+        // 3. All Exam Results Listener (NEW)
+        const qExams = getExamCollectionRef();
+        onSnapshot(
+          qExams,
+          (snapshot) => {
+            allExamRecords = [];
+            snapshot.forEach((doc) => {
+              allExamRecords.push({ id: doc.id, ...doc.data() });
+            });
+
+            if (currentView === "reports" || currentView === "students") { // **UPDATED: Trigger re-render for students view too**
+              renderView(currentView); 
+            }
+          },
+          (error) => {
+            console.error("Error fetching exam records:", error);
           }
         );
       }
@@ -651,6 +888,66 @@
 
         return stats;
       }
+      
+      function calculateStudentExamAverages() {
+        const studentAverages = {}; // {studentId: {totalScore, totalMaxMarks, percentage, subjects: {subjectName: averagePercent}}}
+
+        students.forEach(s => {
+            studentAverages[s.id] = {
+                totalScore: 0,
+                totalMaxMarks: 0,
+                percentage: 0,
+                subjects: {},
+                examCount: 0
+            };
+        });
+
+        const subjectScores = {}; // {studentId: {subject: {scoreSum, maxSum}}}
+
+        allExamRecords.forEach(record => {
+            const studentId = record.studentId;
+            const subject = record.subject;
+            const score = record.score;
+            const maxMarks = record.maxMarks;
+
+            if (studentAverages[studentId]) {
+                // Global Totals
+                studentAverages[studentId].totalScore += score;
+                studentAverages[studentId].totalMaxMarks += maxMarks;
+                studentAverages[studentId].examCount++;
+
+                // Subject Totals
+                if (!subjectScores[studentId]) {
+                    subjectScores[studentId] = {};
+                }
+                if (!subjectScores[studentId][subject]) {
+                    subjectScores[studentId][subject] = { scoreSum: 0, maxSum: 0 };
+                }
+                subjectScores[studentId][subject].scoreSum += score;
+                subjectScores[studentId][subject].maxSum += maxMarks;
+            }
+        });
+
+        // Calculate final percentages
+        Object.keys(studentAverages).forEach(studentId => {
+            const avg = studentAverages[studentId];
+            if (avg.totalMaxMarks > 0) {
+                avg.percentage = (avg.totalScore / avg.totalMaxMarks) * 100;
+            }
+
+            // Calculate subject averages
+            if (subjectScores[studentId]) {
+                Object.keys(subjectScores[studentId]).forEach(subject => {
+                    const sub = subjectScores[studentId][subject];
+                    if (sub.maxSum > 0) {
+                        avg.subjects[subject] = (sub.scoreSum / sub.maxSum) * 100;
+                    }
+                });
+            }
+        });
+
+        return studentAverages;
+      }
 
       // --- UI & STATE MANAGEMENT ---
 
@@ -715,6 +1012,9 @@
           case "reports":
             renderReports();
             break;
+          case "exams":
+            renderExamResults();
+            break;
         }
       }
 
@@ -771,56 +1071,111 @@
       }
 
       function renderStudentManagement() {
-        viewContainer.innerHTML = `
-                <div class="max-w-3xl mx-auto space-y-6">
-                    
-                    <!-- Add Student Form -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Add New Student</h3>
-                        <form id="add-student-form" class="space-y-4">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="student-name" class="block text-sm font-medium text-gray-700">Student Name</label>
-                                    <input type="text" id="student-name" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <label for="student-rollno" class="block text-sm font-medium text-gray-700">Roll No. (ID)</label>
-                                    <input type="number" id="student-rollno" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                </div>
-                            </div>
-                            <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-150">
-                                Add Student
-                            </button>
-                        </form>
-                    </div>
+        // Use a dataset attribute on the view container to maintain tab state across renders
+        let currentStudentTab = viewContainer.dataset.studentTab || 'management';
 
-                    <!-- Student List Table -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Current Students (${students.length})</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm text-left divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Roll No.</th>
-                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Name</th>
-                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600 text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="student-list-mgmt" class="divide-y divide-gray-200">
-                                    <!-- Student rows here -->
-                                </tbody>
-                            </table>
-                        </div>
+        const tabHtml = `
+            <div class="space-y-6">
+                <p id="message" class="text-sm font-semibold h-5"></p>
+                
+                <!-- Tab Navigation for Student Management -->
+                <div class="mb-6">
+                    <div class="flex space-x-4">
+                        <button 
+                            data-tab="management" 
+                            class="student-tab-btn report-tab-btn-style ${currentStudentTab === 'management' ? 'active' : 'bg-gray-200 text-gray-700'}"
+                        >
+                            Add / Remove Students
+                        </button>
+                        <button 
+                            data-tab="performance" 
+                            class="student-tab-btn report-tab-btn-style ${currentStudentTab === 'performance' ? 'active' : 'bg-gray-200 text-gray-700'}"
+                        >
+                            Student Performance
+                        </button>
                     </div>
-                    <p id="message" class="text-sm font-semibold h-5"></p>
+                    <div class="mt-4 h-1"></div>
                 </div>
-            `;
+                
+                <div id="student-tab-content">
+                    <!-- Tab content loaded here -->
+                </div>
+            </div>
+        `;
 
-        updateStudentListMgmt();
+        viewContainer.innerHTML = tabHtml;
+        
+        // Set up tab switching logic
+        document.querySelectorAll('.student-tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const newTab = e.target.dataset.tab;
+                viewContainer.dataset.studentTab = newTab; // Save new state
+                renderView('students'); // Re-render the view to apply changes
+            });
+        });
+        
+        // Render the correct tab content
+        const contentEl = document.getElementById('student-tab-content');
+        if (currentStudentTab === 'management') {
+            contentEl.innerHTML = renderAddDeleteStudentTab();
+            // Reattach event listeners after DOM update
+            setupStudentManagementListeners();
+            updateStudentListMgmt();
+        } else {
+            contentEl.innerHTML = renderStudentPerformanceTab();
+        }
+      }
 
+      function renderAddDeleteStudentTab() {
+        return `
+            <div class="max-w-3xl mx-auto space-y-6">
+                
+                <!-- Add Student Form -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Add New Student</h3>
+                    <form id="add-student-form" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="student-name" class="block text-sm font-medium text-gray-700">Student Name</label>
+                                <input type="text" id="student-name" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label for="student-rollno" class="block text-sm font-medium text-gray-700">Roll No. (ID)</label>
+                                <input type="number" id="student-rollno" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-150">
+                            Add Student
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Student List Table -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Current Students (${students.length})</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Roll No.</th>
+                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Name</th>
+                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-list-mgmt" class="divide-y divide-gray-200">
+                                <!-- Student rows here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+      }
+      
+      function setupStudentManagementListeners() {
         document
           .getElementById("add-student-form")
-          .addEventListener("submit", (e) => {
+          ?.addEventListener("submit", (e) => {
             e.preventDefault();
             const name = document.getElementById("student-name").value.trim();
             const rollNo = parseInt(
@@ -829,13 +1184,13 @@
             if (name && rollNo) {
               addStudent(name, rollNo);
               e.target.reset(); // Clear form
-              document.getElementById("student-name").focus(); // **FIXED: Focus back to name field**
+              document.getElementById("student-name").focus(); // Focus back to name field
             }
           });
 
         document
           .getElementById("student-list-mgmt")
-          .addEventListener("click", (e) => {
+          ?.addEventListener("click", (e) => {
             if (e.target.closest(".delete-btn")) {
               const studentId = e.target.closest(".delete-btn").dataset.id;
               console.log(
@@ -845,8 +1200,80 @@
             }
           });
       }
+      
+      function renderStudentPerformanceTab() {
+          const studentAverages = calculateStudentExamAverages();
+          
+          if (students.length === 0) {
+              return `<div class="p-8 bg-white rounded-xl shadow-lg text-center text-gray-600">No students available.</div>`;
+          }
+          
+          if (Object.keys(studentAverages).every(id => studentAverages[id].examCount === 0)) {
+              return `<div class="p-8 bg-white rounded-xl shadow-lg text-center text-gray-600">No exam results recorded yet. Please add scores in the Exam Results view.</div>`;
+          }
+          
+          // Determine all subjects taken to create dynamic columns
+          const allSubjects = new Set();
+          Object.values(studentAverages).forEach(avg => {
+              Object.keys(avg.subjects).forEach(subject => allSubjects.add(subject));
+          });
+          const subjects = Array.from(allSubjects).sort();
+          
+          // Generate table rows
+          const performanceRows = students.map(s => {
+              const avg = studentAverages[s.id];
+              const percentage = avg?.percentage || 0;
+              
+              let subjectCells = subjects.map(subject => {
+                  const subPercent = avg?.subjects[subject];
+                  if (subPercent !== undefined) {
+                      const colorClass = subPercent >= 70 ? 'text-green-600 font-semibold' : 'text-red-600';
+                      return `<td class="py-3 px-4 text-center ${colorClass}">${subPercent.toFixed(1)}%</td>`;
+                  }
+                  return `<td class="py-3 px-4 text-center text-gray-400">--</td>`;
+              }).join('');
+
+              return `
+                  <tr class="hover:bg-gray-50">
+                      <td class="py-3 px-4 font-medium text-gray-900">${s.rollNo}</td>
+                      <td class="py-3 px-4 text-gray-700">${s.name}</td>
+                      ${subjectCells}
+                      <td class="py-3 px-4 text-center font-extrabold ${percentage >= 70 ? 'text-indigo-600' : 'text-red-600'}">${percentage.toFixed(1)}%</td>
+                      <td class="py-3 px-4 text-center text-gray-500">${avg?.examCount || 0}</td>
+                  </tr>
+              `;
+          }).join('');
+
+          const subjectHeaders = subjects.map(s => 
+            `<th class="py-3 px-4 font-bold text-gray-600 text-center">${s} Avg %</th>`
+          ).join('');
+
+          return `
+              <div class="bg-white p-6 rounded-xl shadow-lg">
+                  <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Exam Performance Breakdown</h3>
+                  <div class="overflow-x-auto">
+                      <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+                          <thead class="bg-gray-50">
+                              <tr>
+                                  <th class="py-3 px-4 font-bold text-gray-600">Roll No.</th>
+                                  <th class="py-3 px-4 font-bold text-gray-600">Name</th>
+                                  ${subjectHeaders}
+                                  <th class="py-3 px-4 font-bold text-gray-600 text-center sticky right-0 bg-gray-50 border-l border-gray-200">Overall Avg %</th>
+                                  <th class="py-3 px-4 font-bold text-gray-600 text-center">Exams Taken</th>
+                              </tr>
+                          </thead>
+                          <tbody class="divide-y divide-gray-200">
+                              ${performanceRows}
+                          </tbody>
+                      </table>
+                  </div>
+                  <p class="text-xs text-gray-500 italic mt-4">Overall Avg % is calculated across all recorded exams for the student.</p>
+              </div>
+          `;
+      }
 
       function updateStudentListMgmt() {
+        // This function is called by setupStudentManagementListeners/renderView to update the Add/Delete table
         const listBody = document.getElementById("student-list-mgmt");
         if (!listBody) return;
 
@@ -868,7 +1295,25 @@
       function renderMonthlyAttendance() {
         const currentYear = monthlyViewDate.getFullYear();
         const currentMonth = monthlyViewDate.getMonth() + 1; // 1-indexed
-        const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+        
+        // Find the first day of the currently selected month
+        const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
+        
+        // Calculate the starting day for the current view (Sunday of the week defined by weeklyViewOffset)
+        // weeklyViewOffset: 0 = current week, -1 = last week, 1 = next week, etc.
+        const dayOfWeek = firstDayOfMonth.getDay(); // 0 (Sun) to 6 (Sat)
+        const daysToSubtract = dayOfWeek === 0 ? 0 : dayOfWeek; // Assuming Sunday is the start of the week (0)
+        
+        // Calculate the start date of the visible week range
+        const viewStartDate = new Date(currentYear, currentMonth - 1, firstDayOfMonth.getDate() - daysToSubtract + (weeklyViewOffset * 7));
+        
+        // Calculate the end date of the visible week range (7 days later)
+        const viewEndDate = new Date(viewStartDate);
+        viewEndDate.setDate(viewEndDate.getDate() + 6);
+
+        // Determine if the navigation buttons should be disabled
+        const prevButtonDisabled = viewStartDate.getMonth() + 1 !== currentMonth && weeklyViewOffset <= 0;
+        const nextButtonDisabled = viewEndDate.getMonth() + 1 !== currentMonth && weeklyViewOffset >= 0;
 
         const monthOptions = [
           { val: 1, name: "January" },
@@ -931,44 +1376,46 @@
                     </div>
                     <!-- END: Month/Year Selector and Quick Mark -->
 
+                    <!-- Weekly Navigation -->
+                    <div class="flex justify-between items-center px-4 md:px-0">
+                        <button id="prev-week-btn" class="p-2 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200 transition disabled:opacity-50" ${prevButtonDisabled ? 'disabled' : ''}>
+                            &larr; Prev Week
+                        </button>
+                        <span class="text-sm font-semibold text-gray-700">
+                            ${viewStartDate.getDate()} - ${viewEndDate.getDate()}, ${viewStartDate.toLocaleString('default', { month: 'short' })}
+                        </span>
+                        <button id="next-week-btn" class="p-2 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200 transition disabled:opacity-50" ${nextButtonDisabled ? 'disabled' : ''}>
+                            Next Week &rarr;
+                        </button>
+                    </div>
+
                     <!-- Monthly Attendance Calendar Table -->
                     <div class="overflow-x-auto rounded-lg shadow-lg border border-gray-200 bg-white">
-                        <table class="min-w-full text-sm text-left border-collapse table-fixed">
-                            <thead class="bg-indigo-600 text-white sticky top-0 z-10">
+                        <table class="min-w-full text-sm text-left border-collapse">
+                            <thead class="bg-indigo-600 text-white sticky top-0 z-10" id="monthly-attendance-header">
                                 <tr>
-                                    <th scope="col" class="py-3 px-3 w-20 min-w-[80px] font-bold sticky left-0 bg-indigo-600 border-r border-indigo-700">Roll No.</th>
-                                    <th scope="col" class="py-3 px-3 w-40 min-w-[150px] font-bold sticky left-[80px] bg-indigo-600">Student Name</th>
-                                    ${Array.from(
-                                      { length: daysInMonth },
-                                      (_, i) => i + 1
-                                    )
-                                      .map((day) => {
-                                        const date = new Date(
-                                          currentYear,
-                                          currentMonth - 1,
-                                          day
-                                        );
-                                        const dayIndex = date.getDay(); // 0=Sun, 6=Sat
-                                        const dayNames = [
-                                          "S",
-                                          "M",
-                                          "T",
-                                          "W",
-                                          "T",
-                                          "F",
-                                          "S",
-                                        ]; // Sun to Sat
-                                        const dayName = dayNames[dayIndex];
-                                        const isHoliday = dayIndex === 6; // **FIXED: Saturday is Holiday**
-
-                                        return `<th scope="col" class="py-1 px-1 day-header calendar-cell ${
-                                          isHoliday ? "holiday" : ""
-                                        } h-full">
-                                                    <div class="text-[0.6rem] font-normal">${dayName}</div>
-                                                    <div class="text-xs font-bold">${day}</div>
-                                                </th>`;
-                                      })
-                                      .join("")}
+                                    <!-- Sticky Columns -->
+                                    <th scope="col" class="py-3 px-0 w-8 min-w-[32px] font-bold sticky-col-roll text-center">Roll</th>
+                                    <th scope="col" class="py-3 px-1 w-24 min-w-[96px] font-bold sticky-col-name">Name</th>
+                                    
+                                    <!-- Weekly Day Headers -->
+                                    ${(() => {
+                                        let headers = '';
+                                        const date = new Date(viewStartDate);
+                                        for (let i = 0; i < 7; i++) {
+                                            const dayIndex = date.getDay(); // 0=Sun, 6=Sat
+                                            const dayNames = ["S", "M", "T", "W", "T", "F", "S"]; // Sun to Sat
+                                            const dayName = dayNames[dayIndex];
+                                            const isHoliday = date.getDay() === 6; // Saturday is Holiday
+                                            
+                                            headers += `<th scope="col" class="calendar-header-cell ${isHoliday ? "holiday" : ""}">
+                                                            <div class="text-[0.6rem] font-normal">${dayName}</div>
+                                                            <div class="text-xs font-bold">${date.getDate()}</div>
+                                                        </th>`;
+                                            date.setDate(date.getDate() + 1);
+                                        }
+                                        return headers;
+                                    })()}
                                 </tr>
                             </thead>
                             <tbody id="monthly-calendar-body" class="divide-y divide-gray-200">
@@ -992,6 +1439,17 @@
         document
           .getElementById("monthly-mark-btn")
           .addEventListener("click", handleMonthlyMark);
+          
+        // NEW: Weekly Navigation Listeners
+        document.getElementById('prev-week-btn').addEventListener('click', () => {
+            weeklyViewOffset--;
+            renderMonthlyAttendance();
+        });
+        document.getElementById('next-week-btn').addEventListener('click', () => {
+            weeklyViewOffset++;
+            renderMonthlyAttendance();
+        });
+
 
         // Attach click listener to the table body for cell updates (delegation)
         document
@@ -999,9 +1457,9 @@
           .addEventListener("click", handleAttendanceCellClick);
 
         // Initial render of the calendar body
-        renderMonthlyCalendarBody();
+        renderMonthlyCalendarBody(viewStartDate);
       }
-
+      
       // Helper to handle month/year dropdown changes
       function updateMonthlyViewDate() {
         const month = parseInt(
@@ -1011,6 +1469,7 @@
           document.getElementById("monthly-select-year").value
         );
         monthlyViewDate = new Date(year, month - 1); // Month is 0-indexed in JS Date object
+        weeklyViewOffset = 0; // Reset to the week containing the 1st of the month
         renderMonthlyAttendance(); // Re-render the entire view
       }
 
@@ -1070,8 +1529,8 @@
         // UI update happens automatically via the global onSnapshot listener for allAttendanceRecords
       }
 
-      // Primary function to populate the monthly calendar table
-      function renderMonthlyCalendarBody() {
+      // Primary function to populate the weekly calendar table
+      function renderMonthlyCalendarBody(viewStartDate) {
         const listBody = document.getElementById("monthly-calendar-body");
         const noStudentsMessage = document.getElementById(
           "no-students-message"
@@ -1086,15 +1545,9 @@
         }
         noStudentsMessage.classList.add("hidden");
 
-        const currentYear = monthlyViewDate.getFullYear();
-        const currentMonth = monthlyViewDate.getMonth() + 1;
-        const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-        const datePrefix = `${currentYear}-${String(currentMonth).padStart(
-          2,
-          "0"
-        )}-`;
+        const datePrefix = monthlyViewDate.toISOString().slice(0, 7);
 
-        // 1. Create a quick lookup map for attendance records in this month
+        // 1. Create a quick lookup map for attendance records in the current month
         const attendanceMap = allAttendanceRecords.reduce((acc, record) => {
           if (record.date.startsWith(datePrefix)) {
             if (!acc[record.studentId]) {
@@ -1112,32 +1565,41 @@
           row.classList.add("hover:bg-gray-50", "transition", "duration-150");
 
           let cellsHtml = `
-                    <td class="py-3 px-3 w-20 min-w-[80px] font-medium text-gray-900 sticky left-0 bg-white border-r border-gray-200">${student.rollNo}</td>
-                    <td class="py-3 px-3 w-40 min-w-[150px] text-gray-700 sticky left-[80px] bg-white">${student.name}</td>
+                    <td class="py-3 px-0 font-medium text-gray-900 sticky-col-roll text-center">${student.rollNo}</td>
+                    <td class="py-3 px-1 text-gray-700 sticky-col-name">${student.name}</td>
                 `;
+          
+          const date = new Date(viewStartDate);
 
-          for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = datePrefix + String(day).padStart(2, "0");
-            const date = new Date(currentYear, currentMonth - 1, day);
-            const isHoliday = date.getDay() === 6; // **FIXED: Saturday is Holiday**
-
-            const dayKey = String(day).padStart(2, "0");
-            const status = attendanceMap[student.id]?.[dayKey] || "U"; // U for Unmarked
-            const statusClass = getStatusClasses(status);
+          for (let i = 0; i < 7; i++) {
+            const currentMonth = monthlyViewDate.getMonth();
+            const cellMonth = date.getMonth();
+            const dateStr = date.toISOString().slice(0, 10);
+            const dayKey = String(date.getDate()).padStart(2, "0");
+            const isHoliday = date.getDay() === 6; // Saturday is Holiday
+            
+            // Only show marks for the selected month, otherwise show a grayed out date or '--'
+            let status = (cellMonth === currentMonth) ? (attendanceMap[student.id]?.[dayKey] || "U") : (isHoliday ? "-" : "U"); 
+            let statusChar = isHoliday ? "-" : status;
+            let statusClass = getStatusClasses(status);
+            
+            // If the date is outside the currently selected month, make it visually disabled
+            const isOutsideMonth = cellMonth !== currentMonth;
 
             cellsHtml += `
                         <td class="calendar-cell attendance-mark border border-gray-100 ${statusClass} ${
               isHoliday ? "holiday" : ""
-            }" 
+            } ${isOutsideMonth ? "opacity-50 pointer-events-none" : ""}" 
                             data-student-id="${student.id}" 
                             data-date="${dateStr}" 
                             data-status="${status}"
                             title="${dateStr} - ${student.name} - ${
               status === "U" ? "Unmarked" : status
             }">
-                            ${isHoliday ? "-" : status}
+                            ${statusChar}
                         </td>
                     `;
+            date.setDate(date.getDate() + 1); // Move to the next day
           }
 
           row.innerHTML = cellsHtml;
@@ -1145,52 +1607,9 @@
         });
       }
 
-      function renderReports() {
-        const stats = calculateAttendanceStats();
-
-        // Simplified logic for current month attendance
-        const currentYear = new Date().getFullYear();
-        const currentMonth = new Date().getMonth() + 1; // 1-indexed
-
-        const monthlyAttendanceMap = {}; // {studentId: {P: count, A: count, L: count, PH: count}}
-
-        allAttendanceRecords.forEach((record) => {
-          const date = new Date(record.date);
-          if (
-            date.getFullYear() === currentYear &&
-            date.getMonth() + 1 === currentMonth
-          ) {
-            if (!monthlyAttendanceMap[record.studentId]) {
-              monthlyAttendanceMap[record.studentId] = {
-                P: 0,
-                A: 0,
-                L: 0,
-                PH: 0,
-                total: 0,
-              };
-            }
-            const statusKey = record.status.charAt(0);
-            if (monthlyAttendanceMap[record.studentId][statusKey]) {
-              monthlyAttendanceMap[record.studentId][statusKey]++;
-            }
-            monthlyAttendanceMap[record.studentId].total++;
-          }
-        });
-
-        // Calculate overall month percentage
-        let monthTotalExpectedMarks = 0;
-        let monthTotalActualPresent = 0;
-        Object.values(monthlyAttendanceMap).forEach((m) => {
-          const expected = m.P + m.A + m.L;
-          monthTotalExpectedMarks += expected;
-          monthTotalActualPresent += m.P + m.L;
-        });
-        const monthPercentage =
-          monthTotalExpectedMarks > 0
-            ? (monthTotalActualPresent / monthTotalExpectedMarks) * 100
-            : 0;
-
-        const studentRows = students
+      // --- NEW: Helper function to render the Attendance Report Content ---
+      function renderAttendanceReportContent(stats) {
+          const studentRows = students
           .map((s) => {
             const sStats = stats.studentStats[s.id];
             
@@ -1222,68 +1641,386 @@
                 `;
           })
           .join("");
-
-        viewContainer.innerHTML = `
-                <div class="space-y-6">
-                    <p class="text-xl font-medium text-gray-600">Detailed attendance analysis.</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
-                            <p class="text-sm font-medium text-gray-500">Present Month Attendance Rate</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${monthPercentage.toFixed(
-                              1
-                            )}%</p>
-                            <p class="text-xs text-gray-400">(${new Date().toLocaleString(
-                              "default",
-                              { month: "long", year: "numeric" }
-                            )})</p>
-                        </div>
-                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
-                            <p class="text-sm font-medium text-gray-500">Total Present (P + L)</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${
-                              stats.totalPresent + stats.totalLate
-                            }</p>
-                            <p class="text-xs text-gray-400">All recorded time.</p>
-                        </div>
-                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
-                            <p class="text-sm font-medium text-gray-500">Overall Attendance Rate</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${stats.globalPercentage.toFixed(
-                              1
-                            )}%</p>
-                            <p class="text-xs text-gray-400">(${
-                              stats.totalPresent + stats.totalLate
-                            } / ${
+          
+          return `
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
+                        <p class="text-sm font-medium text-gray-500">Present Month Attendance Rate</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">${stats.globalPercentage.toFixed(
+                          1
+                        )}%</p>
+                        <p class="text-xs text-gray-400">(${new Date().toLocaleString(
+                          "default",
+                          { month: "long", year: "numeric" }
+                        )})</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
+                        <p class="text-sm font-medium text-gray-500">Total Present (P + L)</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">${
+                          stats.totalPresent + stats.totalLate
+                        }</p>
+                        <p class="text-xs text-gray-400">All recorded time.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
+                        <p class="text-sm font-medium text-gray-500">Overall Attendance Rate</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">${stats.globalPercentage.toFixed(
+                          1
+                        )}%</p>
+                        <p class="text-xs text-gray-400">(${
+                          stats.totalPresent + stats.totalLate
+                        } / ${
           stats.totalPresent + stats.totalAbsent + stats.totalLate
         } expected records)</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4 text-indigo-700">Individual Student Breakdown</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm text-left divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="py-3 px-4 font-bold text-gray-600">Roll No.</th>
-                                        <th class="py-3 px-4 font-bold text-gray-600">Name</th>
-                                        <th class="py-3 px-4 font-bold text-gray-600 text-center">This Month (P+L)</th>
-                                        <th class="py-3 px-4 font-bold text-gray-600 text-center">Present Till Last Month (P+L)</th>
-                                        <th class="py-3 px-4 font-bold text-gray-600 text-center">Total Present (P+L)</th>
-                                        <th class="py-3 px-4 font-bold text-gray-600 text-center">Overall %</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    ${
-                                      studentRows ||
-                                      '<tr><td colspan="6" class="py-4 text-center text-gray-500">No student data to display.</td></tr>'
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
                 </div>
-            `;
+
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700">Individual Student Breakdown</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="py-3 px-4 font-bold text-gray-600">Roll No.</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600">Name</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 text-center">This Month (P+L)</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 text-center">Present Till Last Month (P+L)</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 text-center">Total Present (P+L)</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 text-center">Overall %</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${
+                                  studentRows ||
+                                  '<tr><td colspan="6" class="py-4 text-center text-gray-500">No student data to display.</td></tr>'
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+          `;
       }
+      
+      // --- NEW: Function to render the Exam Report Content ---
+      function renderExamReportContent() {
+          // 1. Group records by exam batch (Subject, Type, Date)
+          const examBatches = allExamRecords.reduce((acc, record) => {
+              const key = record.examBatchId;
+              if (!acc[key]) {
+                  acc[key] = {
+                      examBatchId: key, // Store ID for linking
+                      subject: record.subject,
+                      type: record.type,
+                      date: record.date,
+                      maxMarks: record.maxMarks,
+                      totalScore: 0,
+                      count: 0,
+                  };
+              }
+              acc[key].totalScore += record.score;
+              acc[key].count++;
+              return acc;
+          }, {});
+
+          const batchRows = Object.values(examBatches)
+              .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by date descending
+              .map(batch => {
+                  const classAverage = batch.totalScore / batch.count;
+                  const percentage = (classAverage / batch.maxMarks) * 100;
+                  
+                  // Ensure string parameters passed to onclick are correctly quoted and escaped
+                  const onClickHandler = `deleteExamBatch('${batch.examBatchId}', '${batch.subject.replace(/'/g, "\\'")}', '${batch.type.replace(/'/g, "\\'")}')`;
+
+                  return `
+                      <tr class="bg-white hover:bg-gray-50 border-y border-gray-200">
+                          <td class="py-3 px-4 font-medium text-gray-900">${batch.subject}</td>
+                          <td 
+                              class="py-3 px-4 text-gray-700 exam-batch-link" 
+                              data-batch-id="${batch.examBatchId}"
+                              onclick="openExamDetailsModal('${batch.examBatchId}')"
+                          >
+                              ${batch.type} (${batch.date})
+                          </td>
+                          <td class="py-3 px-4 text-center font-semibold">${batch.maxMarks}</td>
+                          <td class="py-3 px-4 text-center">${batch.count}</td>
+                          <td class="py-3 px-4 text-center font-semibold text-indigo-600">${classAverage.toFixed(1)}</td>
+                          <td class="py-3 px-4 text-center font-extrabold ${percentage >= 70 ? 'text-green-600' : 'text-red-600'}">${percentage.toFixed(1)}%</td>
+                          <td class="py-3 px-4 text-center">
+                              <button onclick="${onClickHandler}" 
+                                      class="text-red-500 hover:text-red-700 transition duration-150 p-1 rounded-full hover:bg-red-100" title="Delete Exam Batch">
+                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                              </button>
+                          </td>
+                      </tr>
+                  `;
+              }).join('');
+          
+          return `
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-xl font-semibold mb-4 text-indigo-700">Exam Batch Summaries (Click Test Details)</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="py-3 px-4 font-bold text-gray-600">Subject</th>
+                                <th class="py-3 px-4 font-bold text-gray-600">Test Details (Date)</th>
+                                <th class="py-3 px-4 font-bold text-gray-600 text-center">Max Marks</th>
+                                <th class="py-3 px-4 font-bold text-gray-600 text-center">Students Marked</th>
+                                <th class="py-3 px-4 font-bold text-gray-600 text-center">Class Average Score</th>
+                                <th class="py-3 px-4 font-bold text-gray-600 text-center">Average %</th>
+                                <th class="py-3 px-4 font-bold text-gray-600 text-center">Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            ${batchRows || '<tr><td colspan="7" class="py-4 text-center text-gray-500">No exam results found.</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+          `;
+      }
+
+      function renderReports() {
+        const stats = calculateAttendanceStats();
+        // Use a dataset attribute on the view container to maintain tab state across renders
+        let currentReportTab = viewContainer.dataset.reportTab || 'attendance';
+
+        const tabHtml = `
+            <div class="space-y-6">
+                <p class="text-xl font-medium text-gray-600">Detailed performance analysis.</p>
+                <div class="mb-6">
+                    <div class="flex space-x-4"> <!-- Changed to flex space-x-4 for pill style -->
+                        <button 
+                            data-tab="attendance" 
+                            class="report-tab-btn report-tab-btn-style ${currentReportTab === 'attendance' ? 'active' : 'bg-gray-200 text-gray-700'}"
+                        >
+                            Attendance Records
+                        </button>
+                        <button 
+                            data-tab="results" 
+                            class="report-tab-btn report-tab-btn-style ${currentReportTab === 'results' ? 'active' : 'bg-gray-200 text-gray-700'}"
+                        >
+                            Exam Results
+                        </button>
+                    </div>
+                    <div class="mt-4 h-1"></div> <!-- Spacer -->
+                </div>
+                <div id="report-tab-content">
+                    <!-- Tab content loaded here -->
+                </div>
+            </div>
+        `;
+
+        viewContainer.innerHTML = tabHtml;
+        
+        // Render the correct content based on the active tab
+        const contentEl = document.getElementById('report-tab-content');
+        if (currentReportTab === 'attendance') {
+            contentEl.innerHTML = renderAttendanceReportContent(stats);
+        } else {
+            contentEl.innerHTML = renderExamReportContent();
+        }
+
+
+        // Attach click listeners for tabs
+        document.querySelectorAll('.report-tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const newTab = e.target.dataset.tab;
+                viewContainer.dataset.reportTab = newTab; // Save new state
+                renderView('reports'); // Re-render the view to apply changes
+            });
+        });
+      }
+      
+      function renderExamResults() {
+        if (students.length === 0) {
+            viewContainer.innerHTML = `
+                <div class="p-8 bg-white rounded-xl shadow-lg text-center">
+                    <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Exam Results</h3>
+                    <p class="text-gray-600">Please add students in the **Student Management** section before entering exam scores.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const today = new Date().toISOString().slice(0, 10);
+        
+        const studentScoreRows = students.map(s => `
+            <tr class="hover:bg-gray-50">
+                <td class="py-3 px-4 text-gray-900">${s.rollNo}</td>
+                <td class="py-3 px-4 text-gray-700">${s.name}</td>
+                <td class="py-3 px-4">
+                    <input type="number" step="0.1" data-id="${s.id}" class="score-input w-24 p-1 border border-gray-300 rounded-md text-center focus:ring-indigo-500 focus:border-indigo-500" placeholder="Score">
+                </td>
+            </tr>
+        `).join('');
+
+        viewContainer.innerHTML = `
+            <div class="space-y-6">
+                <p id="message" class="text-sm font-semibold h-5"></p>
+                
+                <!-- Exam Details Form -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Enter New Exam Results</h3>
+                    <form id="exam-details-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label for="exam-subject" class="block text-sm font-medium text-gray-700">Subject</label>
+                                <input type="text" id="exam-subject" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                            </div>
+                            <div>
+                                <label for="exam-type" class="block text-sm font-medium text-gray-700">Test Type</label>
+                                <input type="text" id="exam-type" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"> <!-- CHANGED TO TEXT INPUT -->
+                            </div>
+                            <div>
+                                <label for="exam-max-marks" class="block text-sm font-medium text-gray-700">Max Marks</label>
+                                <input type="number" id="exam-max-marks" required min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                            </div>
+                            <div>
+                                <label for="exam-date" class="block text-sm font-medium text-gray-700">Exam Date</label>
+                                <input type="date" id="exam-date" value="${today}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Score Entry Table -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Student Scores</h3>
+                    <div class="overflow-x-auto max-h-96">
+                        <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="py-3 px-4 font-bold text-gray-600 w-1/4">Roll No.</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 w-1/2">Student Name</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 w-1/4">Marks Scored</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-score-list" class="divide-y divide-gray-200">
+                                ${studentScoreRows}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button id="save-scores-btn" class="mt-6 w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-150">
+                        Save Exam Results
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Add event listener for saving scores
+        document.getElementById('save-scores-btn').addEventListener('click', () => {
+            const subject = document.getElementById('exam-subject').value.trim();
+            const type = document.getElementById('exam-type').value.trim(); // Get value from text input
+            const maxMarks = document.getElementById('exam-max-marks').value;
+            const date = document.getElementById('exam-date').value;
+
+            if (!subject || !type || !maxMarks || !date) {
+                showMessage("Please fill in all Exam Details (Subject, Type, Max Marks, Date).", "red");
+                return;
+            }
+
+            const scoreInputs = document.querySelectorAll('.score-input');
+            const scores = {};
+            
+            let allScoresValid = true;
+            scoreInputs.forEach(input => {
+                const studentId = input.dataset.id;
+                const scoreValue = input.value.trim();
+                
+                if (scoreValue !== "") {
+                    const scoreNum = parseFloat(scoreValue);
+                    const maxNum = parseInt(maxMarks);
+                    
+                    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > maxNum) {
+                        allScoresValid = false;
+                        input.classList.add('border-red-500', 'ring-red-500');
+                        input.focus();
+                    } else {
+                         input.classList.remove('border-red-500', 'ring-red-500');
+                         scores[studentId] = scoreNum;
+                    }
+                }
+            });
+
+            if (!allScoresValid) {
+                 showMessage(`One or more scores are invalid. They must be between 0 and ${maxMarks}.`, "red");
+                 return;
+            }
+
+            if (Object.keys(scores).length === 0) {
+                 showMessage("Please enter at least one score.", "red");
+                 return;
+            }
+
+            saveExamResults(subject, type, maxMarks, date, scores);
+        });
+      }
+      
+      // --- MODAL FUNCTIONS ---
+      
+      // Function to close the modal
+      window.closeModal = function() {
+          examDetailsModal.classList.add('hidden');
+      }
+
+      // Function to open the modal and populate with batch data
+      window.openExamDetailsModal = function(batchId) {
+          const batchRecords = allExamRecords.filter(r => r.examBatchId === batchId);
+          
+          if (batchRecords.length === 0) {
+              showMessage("No detailed records found for this exam batch.", "red");
+              return;
+          }
+
+          // All records in the batch share the same exam details
+          const examDetails = batchRecords[0];
+          const maxMarks = examDetails.maxMarks;
+
+          // Populate Modal Header
+          document.getElementById('modal-title').innerHTML = 
+              `${examDetails.subject} - ${examDetails.type} <span class="text-sm font-normal text-gray-500">(Max Marks: ${maxMarks})</span>`;
+
+          // Generate student results table content
+          const studentResults = batchRecords
+              .map(record => {
+                  const percentage = (record.score / maxMarks) * 100;
+                  const rollNo = students.find(s => s.id === record.studentId)?.rollNo || 'N/A';
+                  
+                  return `
+                      <tr class="hover:bg-gray-50">
+                          <td class="py-2 px-4 font-medium">${rollNo}</td>
+                          <td class="py-2 px-4">${record.studentName}</td>
+                          <td class="py-2 px-4 text-center text-lg font-bold">${record.score}</td>
+                          <td class="py-2 px-4 text-center font-semibold ${percentage >= 70 ? 'text-green-600' : 'text-red-600'}">${percentage.toFixed(1)}%</td>
+                      </tr>
+                  `;
+              }).join('');
+              
+          const modalContentHtml = `
+              <p class="text-sm text-gray-600 mb-4">Exam Date: ${examDetails.date}</p>
+              <div class="overflow-x-auto max-h-[60vh] border rounded-lg">
+                  <table class="min-w-full text-sm divide-y divide-gray-200">
+                      <thead class="bg-gray-50 sticky top-0">
+                          <tr>
+                              <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase w-1/6">Roll No.</th>
+                              <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase w-3/6">Student Name</th>
+                              <th class="py-3 px-4 text-center text-xs font-bold text-gray-600 uppercase w-1/6">Score</th>
+                              <th class="py-3 px-4 text-center text-xs font-bold text-gray-600 uppercase w-1/6">Percentage</th>
+                          </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-200">
+                          ${studentResults}
+                      </tbody>
+                  </table>
+              </div>
+          `;
+          
+          document.getElementById('modal-content').innerHTML = modalContentHtml;
+          examDetailsModal.classList.remove('hidden');
+      }
+
 
       // --- INITIALIZATION & LISTENERS ---
 
@@ -1296,8 +2033,20 @@
         });
       });
       
-      // 4. Mobile Menu Toggle (Removed: replaced by bottom bar)
-      // 5. Overlay Click to Close Sidebar (Removed: replaced by bottom bar)
+      // Close modal on escape key press
+      document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && !examDetailsModal.classList.contains('hidden')) {
+              closeModal();
+          }
+      });
+      
+      // Close modal when clicking outside the modal content area
+      examDetailsModal.addEventListener('click', (e) => {
+          if (e.target === examDetailsModal) {
+              closeModal();
+          }
+      });
+
 
       // 6. Initial Load: Call the initialization function when the window loads
       window.onload = function () {
