@@ -337,12 +337,12 @@
 
     </div>
     
-    <!-- Modal Container (Hidden by default) -->
+    <!-- MODAL 1: Exam Details Modal Container (Hidden by default) -->
     <div id="exam-details-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 hidden transition-opacity duration-300">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all duration-300">
             <div class="p-6 border-b flex justify-between items-center">
                 <h3 id="modal-title" class="text-xl font-bold text-indigo-700">Exam Results Details</h3>
-                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-800">
+                <button onclick="closeModal('exam-details-modal')" class="text-gray-500 hover:text-gray-800">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -351,6 +351,45 @@
             </div>
         </div>
     </div>
+    
+    <!-- MODAL 2: Student Edit Modal Container (Hidden by default) -->
+    <div id="edit-student-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto transform transition-all duration-300">
+            <form id="edit-student-form">
+                <div class="p-6 border-b flex justify-between items-center bg-indigo-50">
+                    <h3 class="text-xl font-bold text-indigo-700">Edit Student Details</h3>
+                    <button type="button" onclick="closeModal('edit-student-modal')" class="text-gray-500 hover:text-gray-800">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <input type="hidden" id="edit-student-id">
+                    <div>
+                        <label for="edit-student-name" class="block text-sm font-medium text-gray-700">Student Name</label>
+                        <input type="text" id="edit-student-name" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label for="edit-student-rollno" class="block text-sm font-medium text-gray-700">Roll No. (ID)</label>
+                        <input type="number" id="edit-student-rollno" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label for="edit-student-grade" class="block text-sm font-medium text-gray-700">Grade Level</label>
+                        <input type="text" id="edit-student-grade" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <p id="edit-student-message" class="text-sm font-semibold h-5"></p>
+                </div>
+                <div class="p-6 border-t bg-gray-50 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('edit-student-modal')" class="px-4 py-2 bg-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-400 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <!-- Firebase Imports -->
     <script type="module">
@@ -371,6 +410,7 @@
         query,
         orderBy,
         setDoc,
+        updateDoc, // <-- ADDED
         where,
         writeBatch,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -396,7 +436,13 @@
       let currentView = "dashboard";
       let userId = null;
       let monthlyViewDate = new Date(); // Tracks the currently viewed month/year
-      let weeklyViewOffset = 0; // **NEW: Tracks the current week offset (0 = current week)**
+      let weeklyViewOffset = 0; // Tracks the current week offset (0 = current week)
+
+      // --- GRADE MANAGEMENT STATE ---
+      let allGrades = []; // Array of unique grades (e.g., ['9', '10A', '7B'])
+      let attendanceFilterGrade = '7B'; // **DEFAULT GRADE for Attendance View**
+      let selectedExamGrade = ''; // Grade currently selected in the Exam Results INPUT form
+
 
       // DOM Elements
       const viewContainer = document.getElementById("view-container");
@@ -405,6 +451,7 @@
       const userIdDisplayEl = document.getElementById("user-id-display"); // Desktop User ID
       const mobileUserStatusEl = document.getElementById("mobile-user-status"); // Mobile status
       const examDetailsModal = document.getElementById('exam-details-modal');
+      const editStudentModal = document.getElementById('edit-student-modal'); // **NEW**
 
 
       // --- FIREBASE INITIALIZATION ---
@@ -482,7 +529,7 @@
         }
       }
 
-      async function addStudent(name, rollNo) {
+      async function addStudent(name, rollNo, grade) {
         if (!userId) {
           console.error("User not authenticated.");
           return;
@@ -491,12 +538,34 @@
           await addDoc(getStudentCollectionRef(), {
             name: name,
             rollNo: rollNo,
+            grade: grade, // <-- ADDED: Grade Level
             createdAt: new Date(),
           });
-          showMessage(`Student ${name} added successfully!`, "green");
+          showMessage(`Student ${name} (Grade ${grade}) added successfully!`, "green");
         } catch (e) {
           console.error("Error adding student: ", e);
           showMessage("Error adding student.", "red");
+        }
+      }
+      
+      // **NEW: Update Student Function**
+      window.updateStudentDetails = async function(id, name, rollNo, grade) {
+        if (!userId) {
+          showMessage("User not authenticated.", "red");
+          return;
+        }
+        try {
+            const studentRef = doc(getStudentCollectionRef(), id);
+            await updateDoc(studentRef, {
+                name: name,
+                rollNo: rollNo,
+                grade: grade,
+            });
+            showMessage(`Student ${name} details updated successfully!`, "green");
+            closeModal('edit-student-modal');
+        } catch (e) {
+            console.error("Error updating student: ", e);
+            showMessage("Error updating student details.", "red");
         }
       }
 
@@ -539,9 +608,12 @@
       }
 
       async function markMonthPresent(year, month) {
-        if (!userId || students.length === 0) {
+        // Filter students based on current attendance filter grade
+        const studentsToMark = getStudentsByGrade(attendanceFilterGrade);
+
+        if (!userId || studentsToMark.length === 0) {
           showMessage(
-            "Error: User not authenticated or no students available.",
+            "Error: User not authenticated or no students available in the current grade.",
             "red"
           );
           return;
@@ -568,7 +640,7 @@
             continue;
           }
 
-          students.forEach((student) => {
+          studentsToMark.forEach((student) => {
             const docId = `${student.id}_${dateStr}`;
             const attendanceRef = doc(getAttendanceCollectionRef(), docId);
 
@@ -595,15 +667,12 @@
         try {
           await batch.commit();
           showMessage(
-            `Successfully marked ${students.length} students Present for all school days (Sun-Fri) in ${monthName} ${year}. Total records processed: ${totalRecords}.`,
+            `Successfully marked ${studentsToMark.length} students in Grade ${attendanceFilterGrade} Present for all school days (Sun-Fri) in ${monthName} ${year}. Total records processed: ${totalRecords}.`,
             "green"
           );
         } catch (e) {
           console.error("Batch write error during monthly mark: ", e);
-          showMessage(
-            "Error marking monthly attendance. Check console for details.",
-            "red"
-          );
+          showMessage("Error marking monthly attendance. Check console for details.", "red");
         }
       }
 
@@ -626,6 +695,10 @@
         students.forEach(student => {
             const score = scores[student.id];
             
+            // Find the student's full data object to get the grade
+            const studentData = students.find(s => s.id === student.id);
+            const studentGrade = studentData?.grade || 'Unknown'; 
+
             // Only save if a score was entered
             if (score !== undefined && score !== null && score !== "") {
                 const docId = `${examBatchId}_${student.id}`;
@@ -635,6 +708,7 @@
                     examBatchId: examBatchId,
                     studentId: student.id,
                     studentName: student.name,
+                    studentGrade: studentGrade, // <-- SAVED: Include Grade
                     subject: subject,
                     type: type,
                     date: date,
@@ -721,6 +795,10 @@
             });
             students = newStudents.sort((a, b) => a.rollNo - b.rollNo); // Keep sorted
 
+            // Calculate unique grades
+            const gradesSet = new Set(newStudents.map(s => s.grade).filter(Boolean));
+            allGrades = Array.from(gradesSet).sort();
+
             // Re-render the current view to reflect new student list/stats
             renderView(currentView);
           },
@@ -765,7 +843,7 @@
               allExamRecords.push({ id: doc.id, ...doc.data() });
             });
 
-            if (currentView === "reports" || currentView === "students") { // **UPDATED: Trigger re-render for students view too**
+            if (currentView === "reports" || currentView === "students" || currentView === "exams") { 
               renderView(currentView); 
             }
           },
@@ -774,10 +852,18 @@
           }
         );
       }
+      
+      // --- HELPER FUNCTIONS ---
+
+      function getStudentsByGrade(grade) {
+          if (!grade || grade === 'All') return students;
+          return students.filter(s => s.grade === grade);
+      }
 
       // --- DATA CALCULATION ---
 
       function calculateAttendanceStats() {
+        // ... (function body remains the same, it operates on 'students' array)
         const stats = {
           totalStudents: students.length,
           totalAttendanceDays: 0,
@@ -964,6 +1050,16 @@
         setTimeout(() => (messageEl.textContent = ""), 4000);
       }
       
+      // Helper function to show messages in the Edit Student Modal
+      function showEditMessage(text, color) {
+        const messageEl = document.getElementById("edit-student-message");
+        messageEl.textContent = text;
+        messageEl.className = `text-sm font-semibold h-5 mt-1 ${
+          color === "green" ? "text-green-600" : "text-red-600"
+        }`;
+        setTimeout(() => (messageEl.textContent = ""), 4000);
+      }
+
       function setActiveNav(viewName) {
         // 1. Desktop Nav
         document.querySelectorAll(".desktop-nav").forEach((item) => {
@@ -1128,13 +1224,13 @@
 
       function renderAddDeleteStudentTab() {
         return `
-            <div class="max-w-3xl mx-auto space-y-6">
+            <div class="max-w-4xl mx-auto space-y-6">
                 
                 <!-- Add Student Form -->
                 <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Add New Student</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Add New Student (${students.length})</h3>
                     <form id="add-student-form" class="space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
                                 <label for="student-name" class="block text-sm font-medium text-gray-700">Student Name</label>
                                 <input type="text" id="student-name" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -1142,6 +1238,10 @@
                             <div>
                                 <label for="student-rollno" class="block text-sm font-medium text-gray-700">Roll No. (ID)</label>
                                 <input type="number" id="student-rollno" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label for="student-grade" class="block text-sm font-medium text-gray-700">Grade Level</label>
+                                <input type="text" id="student-grade" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., 9, 10A, 7B">
                             </div>
                         </div>
                         <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-150">
@@ -1152,13 +1252,14 @@
 
                 <!-- Student List Table -->
                 <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Current Students (${students.length})</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Current Students List</h3>
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm text-left divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Roll No.</th>
                                     <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Name</th>
+                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Grade</th>
                                     <th class="py-3 px-4 sm:px-6 font-bold text-gray-600 text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -1181,26 +1282,60 @@
             const rollNo = parseInt(
               document.getElementById("student-rollno").value
             );
-            if (name && rollNo) {
-              addStudent(name, rollNo);
+            const grade = document.getElementById("student-grade").value.trim();
+            if (name && rollNo && grade) {
+              addStudent(name, rollNo, grade);
               e.target.reset(); // Clear form
               document.getElementById("student-name").focus(); // Focus back to name field
             }
           });
+          
+        // **NEW: Edit Student Form Listener**
+        document.getElementById('edit-student-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById("edit-student-id").value;
+            const name = document.getElementById("edit-student-name").value.trim();
+            const rollNo = parseInt(document.getElementById("edit-student-rollno").value);
+            const grade = document.getElementById("edit-student-grade").value.trim();
+            
+            if (name && rollNo && grade && id) {
+                updateStudentDetails(id, name, rollNo, grade);
+            } else {
+                showEditMessage("All fields must be filled.", "red");
+            }
+        });
+
 
         document
           .getElementById("student-list-mgmt")
           ?.addEventListener("click", (e) => {
             if (e.target.closest(".delete-btn")) {
               const studentId = e.target.closest(".delete-btn").dataset.id;
-              console.log(
-                "Confirmation: Are you sure you want to delete this student?"
-              );
-              deleteStudent(studentId);
+              if (confirm("Are you sure you want to delete this student permanently?")) {
+                  deleteStudent(studentId);
+              }
+            }
+            // **NEW: Handle Edit Button Click**
+            if (e.target.closest(".edit-btn")) {
+                const studentId = e.target.closest(".edit-btn").dataset.id;
+                const studentData = students.find(s => s.id === studentId);
+                if (studentData) {
+                    openEditStudentModal(studentData);
+                }
             }
           });
       }
       
+      // **NEW: Open Edit Student Modal Function**
+      window.openEditStudentModal = function(student) {
+          document.getElementById("edit-student-id").value = student.id;
+          document.getElementById("edit-student-name").value = student.name;
+          document.getElementById("edit-student-rollno").value = student.rollNo;
+          document.getElementById("edit-student-grade").value = student.grade;
+          showEditMessage("", "green"); // Clear previous messages
+          editStudentModal.classList.remove('hidden');
+      }
+
       function renderStudentPerformanceTab() {
           const studentAverages = calculateStudentExamAverages();
           
@@ -1237,6 +1372,7 @@
                   <tr class="hover:bg-gray-50">
                       <td class="py-3 px-4 font-medium text-gray-900">${s.rollNo}</td>
                       <td class="py-3 px-4 text-gray-700">${s.name}</td>
+                      <td class="py-3 px-4 text-gray-700">${s.grade || 'N/A'}</td>
                       ${subjectCells}
                       <td class="py-3 px-4 text-center font-extrabold ${percentage >= 70 ? 'text-indigo-600' : 'text-red-600'}">${percentage.toFixed(1)}%</td>
                       <td class="py-3 px-4 text-center text-gray-500">${avg?.examCount || 0}</td>
@@ -1257,6 +1393,7 @@
                               <tr>
                                   <th class="py-3 px-4 font-bold text-gray-600">Roll No.</th>
                                   <th class="py-3 px-4 font-bold text-gray-600">Name</th>
+                                  <th class="py-3 px-4 font-bold text-gray-600">Grade</th>
                                   ${subjectHeaders}
                                   <th class="py-3 px-4 font-bold text-gray-600 text-center sticky right-0 bg-gray-50 border-l border-gray-200">Overall Avg %</th>
                                   <th class="py-3 px-4 font-bold text-gray-600 text-center">Exams Taken</th>
@@ -1273,22 +1410,46 @@
       }
 
       function updateStudentListMgmt() {
-        // This function is called by setupStudentManagementListeners/renderView to update the Add/Delete table
         const listBody = document.getElementById("student-list-mgmt");
         if (!listBody) return;
 
         listBody.innerHTML = "";
-        students.forEach((student) => {
-          const row = document.createElement("tr");
-          row.classList.add("hover:bg-gray-50");
-          row.innerHTML = `
-                        <td class="py-3 px-4 sm:px-6 text-gray-900">${student.rollNo}</td>
-                        <td class="py-3 px-4 sm:px-6 text-gray-700">${student.name}</td>
-                        <td class="py-3 px-4 sm:px-6 text-center">
-                            <button class="delete-btn px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-150 text-xs" data-id="${student.id}">Delete</button>
-                        </td>
-                    `;
-          listBody.appendChild(row);
+        
+        // Group students by Grade
+        const studentsByGrade = students.reduce((acc, student) => {
+            const grade = student.grade || 'Unassigned';
+            if (!acc[grade]) {
+                acc[grade] = [];
+            }
+            acc[grade].push(student);
+            return acc;
+        }, {});
+
+        // Sort grades (e.g., '7B', '9', '10A')
+        const gradesToDisplay = Object.keys(studentsByGrade).sort();
+
+        gradesToDisplay.forEach(grade => {
+            // Add Grade Header
+            const headerRow = document.createElement("tr");
+            headerRow.classList.add("bg-indigo-100", "font-bold");
+            headerRow.innerHTML = `<td colspan="4" class="py-2 px-4 text-indigo-800">${grade} (${studentsByGrade[grade].length} Students)</td>`;
+            listBody.appendChild(headerRow);
+
+            // Add student rows for this grade
+            studentsByGrade[grade].forEach((student) => {
+                const row = document.createElement("tr");
+                row.classList.add("hover:bg-gray-50");
+                row.innerHTML = `
+                            <td class="py-3 px-4 sm:px-6 text-gray-900">${student.rollNo}</td>
+                            <td class="py-3 px-4 sm:px-6 text-gray-700">${student.name}</td>
+                            <td class="py-3 px-4 sm:px-6 text-gray-700">${student.grade || 'N/A'}</td>
+                            <td class="py-3 px-4 sm:px-6 text-center space-x-2">
+                                <button class="edit-btn px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-150 text-xs" data-id="${student.id}">Edit</button>
+                                <button class="delete-btn px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-150 text-xs" data-id="${student.id}">Delete</button>
+                            </td>
+                        `;
+                listBody.appendChild(row);
+            });
         });
       }
 
@@ -1296,11 +1457,14 @@
         const currentYear = monthlyViewDate.getFullYear();
         const currentMonth = monthlyViewDate.getMonth() + 1; // 1-indexed
         
+        // --- NEW: Filter Students based on selected grade ---
+        const studentsForAttendance = getStudentsByGrade(attendanceFilterGrade);
+        // --- END NEW ---
+
         // Find the first day of the currently selected month
         const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
         
         // Calculate the starting day for the current view (Sunday of the week defined by weeklyViewOffset)
-        // weeklyViewOffset: 0 = current week, -1 = last week, 1 = next week, etc.
         const dayOfWeek = firstDayOfMonth.getDay(); // 0 (Sun) to 6 (Sat)
         const daysToSubtract = dayOfWeek === 0 ? 0 : dayOfWeek; // Assuming Sunday is the start of the week (0)
         
@@ -1345,32 +1509,40 @@
               }>${y}</option>`
           )
           .join("");
+          
+        const gradeOptions = allGrades.map(g => 
+             `<option value="${g}" ${g === attendanceFilterGrade ? 'selected' : ''}>Grade ${g}</option>`
+        ).join('');
+
 
         viewContainer.innerHTML = `
                 <div class="space-y-6">
                     <p id="message" class="text-sm font-semibold h-5"></p>
                     
-                    <!-- Month/Year Selector and Quick Mark -->
+                    <!-- Month/Year Selector and Grade Filter -->
                     <div class="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
                         <div class="flex flex-wrap items-center justify-between gap-4 mb-3">
                             <h3 class="text-xl font-semibold text-indigo-700">Attendance Calendar</h3>
-                            <div class="flex gap-2 items-center">
-                                <select id="monthly-select-month" class="p-2 border border-gray-300 rounded-lg shadow-sm w-full sm:w-auto">
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <select id="monthly-select-grade" class="p-2 border border-gray-300 rounded-lg shadow-sm w-32">
+                                    ${gradeOptions}
+                                </select>
+                                <select id="monthly-select-month" class="p-2 border border-gray-300 rounded-lg shadow-sm w-32">
                                     ${monthOptions}
                                 </select>
-                                <select id="monthly-select-year" class="p-2 border border-gray-300 rounded-lg shadow-sm w-full sm:w-auto">
+                                <select id="monthly-select-year" class="p-2 border border-gray-300 rounded-lg shadow-sm w-24">
                                     ${yearOptions}
                                 </select>
                             </div>
                         </div>
 
                         <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-200 mt-4">
-                            <h4 class="text-md font-semibold text-indigo-700 mb-2">Monthly Quick Mark (School Days: Sun-Fri)</h4>
+                            <h4 class="text-md font-semibold text-indigo-700 mb-2">Monthly Quick Mark (Current View: Grade ${attendanceFilterGrade})</h4>
                             <div class="flex flex-wrap gap-3 items-center">
                                 <button id="monthly-mark-btn" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition duration-150 text-sm">
-                                    Mark All Present
+                                    Mark All Present (Grade ${attendanceFilterGrade})
                                 </button>
-                                <p class="text-xs text-indigo-500">Marks Sun-Fri as 'Present'. Overwrites existing data.</p>
+                                <p class="text-xs text-indigo-500">Marks Sun-Fri as 'Present' for the selected grade. Overwrites existing data.</p>
                             </div>
                         </div>
                     </div>
@@ -1423,22 +1595,31 @@
                             </tbody>
                         </table>
                         <div id="no-students-message" class="text-center py-10 text-gray-500 hidden">
-                             No students found. Add students in Student Management to begin tracking.
+                             No students found for Grade ${attendanceFilterGrade}.
                         </div>
                     </div>
                 </div>
             `;
-
+        
+        // --- NEW: Grade Filter Listener ---
+        document
+          .getElementById("monthly-select-grade")
+          .addEventListener("change", (e) => {
+              attendanceFilterGrade = e.target.value;
+              weeklyViewOffset = 0; // Reset week view when changing grade/month
+              renderMonthlyAttendance();
+          });
+          
         // Attach event listeners for month/year change
         document
           .getElementById("monthly-select-month")
-          .addEventListener("change", updateMonthlyViewDate);
+          .addEventListener("change", window.updateMonthlyViewDate);
         document
           .getElementById("monthly-select-year")
-          .addEventListener("change", updateMonthlyViewDate);
+          .addEventListener("change", window.updateMonthlyViewDate);
         document
           .getElementById("monthly-mark-btn")
-          .addEventListener("click", handleMonthlyMark);
+          .addEventListener("click", window.handleMonthlyMark);
           
         // NEW: Weekly Navigation Listeners
         document.getElementById('prev-week-btn').addEventListener('click', () => {
@@ -1454,14 +1635,14 @@
         // Attach click listener to the table body for cell updates (delegation)
         document
           .getElementById("monthly-calendar-body")
-          .addEventListener("click", handleAttendanceCellClick);
+          .addEventListener("click", window.handleAttendanceCellClick);
 
         // Initial render of the calendar body
-        renderMonthlyCalendarBody(viewStartDate);
+        renderMonthlyCalendarBody(viewStartDate, studentsForAttendance);
       }
       
       // Helper to handle month/year dropdown changes
-      function updateMonthlyViewDate() {
+      window.updateMonthlyViewDate = function() { // Made global
         const month = parseInt(
           document.getElementById("monthly-select-month").value
         );
@@ -1474,7 +1655,7 @@
       }
 
       // Helper to handle monthly mark button click
-      function handleMonthlyMark() {
+      window.handleMonthlyMark = function() { // Made global
         const month = parseInt(
           document.getElementById("monthly-select-month").value
         );
@@ -1498,9 +1679,9 @@
       }
 
       // Helper to handle attendance cell clicks (toggle status)
-      function handleAttendanceCellClick(event) {
+      window.handleAttendanceCellClick = function(event) { // MADE GLOBAL
         const cell = event.target.closest(".attendance-mark");
-        if (!cell || cell.classList.contains("holiday")) return; // **FIXED: check for .holiday class**
+        if (!cell || cell.classList.contains("holiday")) return; // check for .holiday class
 
         const studentId = cell.dataset.studentId;
         const date = cell.dataset.date;
@@ -1516,7 +1697,7 @@
             break;
           case "L":
             newStatus = "PH";
-            break; // **NEW: Public Holiday**
+            break; // Public Holiday
           case "PH":
             newStatus = "Unmarked";
             break; // Unmarked
@@ -1530,7 +1711,7 @@
       }
 
       // Primary function to populate the weekly calendar table
-      function renderMonthlyCalendarBody(viewStartDate) {
+      function renderMonthlyCalendarBody(viewStartDate, studentsForAttendance) {
         const listBody = document.getElementById("monthly-calendar-body");
         const noStudentsMessage = document.getElementById(
           "no-students-message"
@@ -1539,7 +1720,7 @@
 
         listBody.innerHTML = "";
 
-        if (students.length === 0) {
+        if (studentsForAttendance.length === 0) {
           noStudentsMessage.classList.remove("hidden");
           return;
         }
@@ -1559,8 +1740,8 @@
           return acc;
         }, {});
 
-        // 2. Build the table rows
-        students.forEach((student) => {
+        // 2. Build the table rows using the FILTERED student list
+        studentsForAttendance.forEach((student) => {
           const row = document.createElement("tr");
           row.classList.add("hover:bg-gray-50", "transition", "duration-150");
 
@@ -1606,6 +1787,7 @@
           listBody.appendChild(row);
         });
       }
+
 
       // --- NEW: Helper function to render the Attendance Report Content ---
       function renderAttendanceReportContent(stats) {
@@ -1668,7 +1850,7 @@
                           1
                         )}%</p>
                         <p class="text-xs text-gray-400">(${
-                          stats.totalPresent + stats.totalLate
+                          stats.totalPresent + stats.totalAbsent + stats.totalLate
                         } / ${
           stats.totalPresent + stats.totalAbsent + stats.totalLate
         } expected records)</p>
@@ -1704,8 +1886,16 @@
       
       // --- NEW: Function to render the Exam Report Content ---
       function renderExamReportContent() {
+          // New state to filter reports
+          let reportGradeFilter = viewContainer.dataset.reportGradeFilter || 'All'; 
+          
+          // Filter exam records based on selected grade
+          const filteredExamRecords = allExamRecords.filter(r => 
+              reportGradeFilter === 'All' || r.studentGrade === reportGradeFilter
+          );
+          
           // 1. Group records by exam batch (Subject, Type, Date)
-          const examBatches = allExamRecords.reduce((acc, record) => {
+          const examBatches = filteredExamRecords.reduce((acc, record) => {
               const key = record.examBatchId;
               if (!acc[key]) {
                   acc[key] = {
@@ -1716,6 +1906,7 @@
                       maxMarks: record.maxMarks,
                       totalScore: 0,
                       count: 0,
+                      grade: record.studentGrade, // Added grade for display
                   };
               }
               acc[key].totalScore += record.score;
@@ -1743,6 +1934,7 @@
                               ${batch.type} (${batch.date})
                           </td>
                           <td class="py-3 px-4 text-center font-semibold">${batch.maxMarks}</td>
+                          <td class="py-3 px-4 text-center">${batch.grade}</td>
                           <td class="py-3 px-4 text-center">${batch.count}</td>
                           <td class="py-3 px-4 text-center font-semibold text-indigo-600">${classAverage.toFixed(1)}</td>
                           <td class="py-3 px-4 text-center font-extrabold ${percentage >= 70 ? 'text-green-600' : 'text-red-600'}">${percentage.toFixed(1)}%</td>
@@ -1755,10 +1947,23 @@
                       </tr>
                   `;
               }).join('');
-          
+              
+          // Grade options for the report filter
+          const gradeFilterOptions = ['All', ...allGrades].map(g => 
+              `<option value="${g}" ${g === reportGradeFilter ? 'selected' : ''}>${g === 'All' ? 'All Grades' : 'Grade ' + g}</option>`
+          ).join('');
+
           return `
             <div class="bg-white p-6 rounded-xl shadow-lg">
                 <h3 class="text-xl font-semibold mb-4 text-indigo-700">Exam Batch Summaries (Click Test Details)</h3>
+                
+                <div class="flex justify-end mb-4">
+                    <label for="report-grade-filter" class="text-sm font-medium text-gray-700 mr-2">Filter Grade:</label>
+                    <select id="report-grade-filter" class="p-2 border border-gray-300 rounded-lg shadow-sm">
+                        ${gradeFilterOptions}
+                    </select>
+                </div>
+                
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm text-left divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -1766,6 +1971,7 @@
                                 <th class="py-3 px-4 font-bold text-gray-600">Subject</th>
                                 <th class="py-3 px-4 font-bold text-gray-600">Test Details (Date)</th>
                                 <th class="py-3 px-4 font-bold text-gray-600 text-center">Max Marks</th>
+                                <th class="py-3 px-4 font-bold text-gray-600 text-center">Grade</th>
                                 <th class="py-3 px-4 font-bold text-gray-600 text-center">Students Marked</th>
                                 <th class="py-3 px-4 font-bold text-gray-600 text-center">Class Average Score</th>
                                 <th class="py-3 px-4 font-bold text-gray-600 text-center">Average %</th>
@@ -1773,12 +1979,18 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
-                            ${batchRows || '<tr><td colspan="7" class="py-4 text-center text-gray-500">No exam results found.</td></tr>'}
+                            ${batchRows || '<tr><td colspan="8" class="py-4 text-center text-gray-500">No exam results found for this grade.</td></tr>'}
                         </tbody>
                     </table>
                 </div>
             </div>
           `;
+          
+          // Event Listener for the Grade Filter
+          document.getElementById('report-grade-filter').addEventListener('change', (e) => {
+              viewContainer.dataset.reportGradeFilter = e.target.value;
+              renderView('reports');
+          });
       }
 
       function renderReports() {
@@ -1833,6 +2045,12 @@
         });
       }
       
+      // Function to handle grade selection in the exam input view
+      window.handleExamGradeSelection = function(grade) {
+          selectedExamGrade = grade;
+          renderExamResults();
+      }
+
       function renderExamResults() {
         if (students.length === 0) {
             viewContainer.innerHTML = `
@@ -1846,10 +2064,36 @@
 
         const today = new Date().toISOString().slice(0, 10);
         
-        const studentScoreRows = students.map(s => `
+        // --- GRADE SELECTION OPTIONS ---
+        const gradeOptions = ['Select Grade', ...allGrades].map(g => 
+            `<option value="${g}" ${g === selectedExamGrade ? 'selected' : ''} ${g === 'Select Grade' ? 'disabled' : ''}>${g === 'Select Grade' ? g : 'Grade ' + g}</option>`
+        ).join('');
+        
+        // --- Step 1: Grade Selection UI ---
+        if (!selectedExamGrade || selectedExamGrade === 'Select Grade') {
+             viewContainer.innerHTML = `
+                <div class="max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg text-center space-y-4">
+                    <h3 class="text-xl font-semibold text-indigo-700">Select Grade for Scoring</h3>
+                    <p class="text-gray-600">Choose the grade level you are currently entering exam scores for.</p>
+                    <select id="exam-grade-selector" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm text-lg">
+                        ${gradeOptions}
+                    </select>
+                </div>
+             `;
+             document.getElementById('exam-grade-selector').addEventListener('change', (e) => {
+                 handleExamGradeSelection(e.target.value);
+             });
+             return;
+        }
+        
+        // --- Step 2: Load Students and Scoring UI (Only runs if a grade is selected) ---
+        const studentsForScoring = getStudentsByGrade(selectedExamGrade);
+        
+        const studentScoreRows = studentsForScoring.map(s => `
             <tr class="hover:bg-gray-50">
                 <td class="py-3 px-4 text-gray-900">${s.rollNo}</td>
                 <td class="py-3 px-4 text-gray-700">${s.name}</td>
+                <td class="py-3 px-4 text-gray-700">${s.grade || 'N/A'}</td>
                 <td class="py-3 px-4">
                     <input type="number" step="0.1" data-id="${s.id}" class="score-input w-24 p-1 border border-gray-300 rounded-md text-center focus:ring-indigo-500 focus:border-indigo-500" placeholder="Score">
                 </td>
@@ -1860,9 +2104,17 @@
             <div class="space-y-6">
                 <p id="message" class="text-sm font-semibold h-5"></p>
                 
+                <!-- Currently Selected Grade Display -->
+                <div class="bg-indigo-50 p-3 rounded-xl shadow-inner border border-indigo-200 flex justify-between items-center">
+                    <h4 class="text-lg font-bold text-indigo-800">Entering Scores for: Grade ${selectedExamGrade}</h4>
+                    <button onclick="handleExamGradeSelection('')" class="text-sm text-indigo-600 hover:text-indigo-900 font-semibold underline">
+                        Change Grade
+                    </button>
+                </div>
+
                 <!-- Exam Details Form -->
                 <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Enter New Exam Results</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Exam Details</h3>
                     <form id="exam-details-form" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
@@ -1871,7 +2123,7 @@
                             </div>
                             <div>
                                 <label for="exam-type" class="block text-sm font-medium text-gray-700">Test Type</label>
-                                <input type="text" id="exam-type" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"> <!-- CHANGED TO TEXT INPUT -->
+                                <input type="text" id="exam-type" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
                             </div>
                             <div>
                                 <label for="exam-max-marks" class="block text-sm font-medium text-gray-700">Max Marks</label>
@@ -1887,14 +2139,15 @@
 
                 <!-- Score Entry Table -->
                 <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Student Scores</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Student Scores (${studentsForScoring.length} Students)</h3>
                     <div class="overflow-x-auto max-h-96">
                         <table class="min-w-full text-sm text-left divide-y divide-gray-200">
                             <thead class="bg-gray-50 sticky top-0">
                                 <tr>
-                                    <th class="py-3 px-4 font-bold text-gray-600 w-1/4">Roll No.</th>
-                                    <th class="py-3 px-4 font-bold text-gray-600 w-1/2">Student Name</th>
-                                    <th class="py-3 px-4 font-bold text-gray-600 w-1/4">Marks Scored</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 w-1/5">Roll No.</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 w-2/5">Student Name</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 w-1/5">Grade</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 w-1/5">Marks Scored</th>
                                 </tr>
                             </thead>
                             <tbody id="student-score-list" class="divide-y divide-gray-200">
@@ -1912,7 +2165,7 @@
         // Add event listener for saving scores
         document.getElementById('save-scores-btn').addEventListener('click', () => {
             const subject = document.getElementById('exam-subject').value.trim();
-            const type = document.getElementById('exam-type').value.trim(); // Get value from text input
+            const type = document.getElementById('exam-type').value.trim(); 
             const maxMarks = document.getElementById('exam-max-marks').value;
             const date = document.getElementById('exam-date').value;
 
@@ -1960,12 +2213,12 @@
       
       // --- MODAL FUNCTIONS ---
       
-      // Function to close the modal
-      window.closeModal = function() {
-          examDetailsModal.classList.add('hidden');
+      // Function to close any modal
+      window.closeModal = function(modalId) {
+          document.getElementById(modalId).classList.add('hidden');
       }
 
-      // Function to open the modal and populate with batch data
+      // Function to open the exam details modal and populate with batch data
       window.openExamDetailsModal = function(batchId) {
           const batchRecords = allExamRecords.filter(r => r.examBatchId === batchId);
           
@@ -1992,6 +2245,7 @@
                       <tr class="hover:bg-gray-50">
                           <td class="py-2 px-4 font-medium">${rollNo}</td>
                           <td class="py-2 px-4">${record.studentName}</td>
+                          <td class="py-2 px-4">${record.studentGrade || 'N/A'}</td>
                           <td class="py-2 px-4 text-center text-lg font-bold">${record.score}</td>
                           <td class="py-2 px-4 text-center font-semibold ${percentage >= 70 ? 'text-green-600' : 'text-red-600'}">${percentage.toFixed(1)}%</td>
                       </tr>
@@ -2006,6 +2260,7 @@
                           <tr>
                               <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase w-1/6">Roll No.</th>
                               <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase w-3/6">Student Name</th>
+                              <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase w-1/6">Grade</th>
                               <th class="py-3 px-4 text-center text-xs font-bold text-gray-600 uppercase w-1/6">Score</th>
                               <th class="py-3 px-4 text-center text-xs font-bold text-gray-600 uppercase w-1/6">Percentage</th>
                           </tr>
@@ -2035,16 +2290,23 @@
       
       // Close modal on escape key press
       document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' && !examDetailsModal.classList.contains('hidden')) {
-              closeModal();
+          if (e.key === 'Escape') {
+              if (!examDetailsModal.classList.contains('hidden')) {
+                  closeModal('exam-details-modal');
+              }
+              if (!editStudentModal.classList.contains('hidden')) {
+                  closeModal('edit-student-modal');
+              }
           }
       });
       
       // Close modal when clicking outside the modal content area
-      examDetailsModal.addEventListener('click', (e) => {
-          if (e.target === examDetailsModal) {
-              closeModal();
-          }
+      [examDetailsModal, editStudentModal].forEach(modal => {
+          modal.addEventListener('click', (e) => {
+              if (e.target === modal) {
+                  closeModal(modal.id);
+              }
+          });
       });
 
 
