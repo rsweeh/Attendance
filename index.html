@@ -535,13 +535,16 @@
           return;
         }
         try {
+          // Normalize grade before saving to ensure consistent filtering later
+          const normalizedGrade = grade.trim().toUpperCase(); 
+          
           await addDoc(getStudentCollectionRef(), {
             name: name,
             rollNo: rollNo,
-            grade: grade, // <-- ADDED: Grade Level
+            grade: normalizedGrade, // <-- SAVED: Normalized Grade Level
             createdAt: new Date(),
           });
-          showMessage(`Student ${name} (Grade ${grade}) added successfully!`, "green");
+          showMessage(`Student ${name} (Grade ${normalizedGrade}) added successfully!`, "green");
         } catch (e) {
           console.error("Error adding student: ", e);
           showMessage("Error adding student.", "red");
@@ -555,11 +558,14 @@
           return;
         }
         try {
+            // Normalize grade before saving
+            const normalizedGrade = grade.trim().toUpperCase();
+            
             const studentRef = doc(getStudentCollectionRef(), id);
             await updateDoc(studentRef, {
                 name: name,
                 rollNo: rollNo,
-                grade: grade,
+                grade: normalizedGrade,
             });
             showMessage(`Student ${name} details updated successfully!`, "green");
             closeModal('edit-student-modal');
@@ -697,7 +703,8 @@
             
             // Find the student's full data object to get the grade
             const studentData = students.find(s => s.id === student.id);
-            const studentGrade = studentData?.grade || 'Unknown'; 
+            // Grade is already normalized in the student object
+            const studentGrade = studentData?.grade || 'UNKNOWN'; 
 
             // Only save if a score was entered
             if (score !== undefined && score !== null && score !== "") {
@@ -708,7 +715,7 @@
                     examBatchId: examBatchId,
                     studentId: student.id,
                     studentName: student.name,
-                    studentGrade: studentGrade, // <-- SAVED: Include Grade
+                    studentGrade: studentGrade, // <-- SAVED: Normalized Grade
                     subject: subject,
                     type: type,
                     date: date,
@@ -796,8 +803,15 @@
             students = newStudents.sort((a, b) => a.rollNo - b.rollNo); // Keep sorted
 
             // Calculate unique grades
-            const gradesSet = new Set(newStudents.map(s => s.grade).filter(Boolean));
-            allGrades = Array.from(gradesSet).sort();
+            const gradesSet = new Set(newStudents.map(s => s.grade).filter(Boolean).map(g => g.trim().toUpperCase()));
+            // Keep allGrades list capitalized and sorted for UI selectors
+            allGrades = Array.from(gradesSet).sort(); 
+            
+            // If the default filter grade is no longer valid, reset it.
+            if (!allGrades.includes(attendanceFilterGrade)) {
+                attendanceFilterGrade = allGrades[0] || '';
+            }
+
 
             // Re-render the current view to reflect new student list/stats
             renderView(currentView);
@@ -855,9 +869,17 @@
       
       // --- HELPER FUNCTIONS ---
 
+      // **FIXED**: Normalizes both the filter grade and the student's grade for reliable matching.
       function getStudentsByGrade(grade) {
-          if (!grade || grade === 'All') return students;
-          return students.filter(s => s.grade === grade);
+          const normalizedFilter = grade ? grade.trim().toUpperCase() : null;
+          
+          if (!normalizedFilter || normalizedFilter === 'ALL' || normalizedFilter === 'UNASSIGNED') return students;
+          
+          return students.filter(s => {
+              // Ensure student.grade exists and normalize it for comparison
+              const normalizedStudentGrade = s.grade ? String(s.grade).trim().toUpperCase() : 'UNKNOWN';
+              return normalizedStudentGrade === normalizedFilter;
+          });
       }
 
       // --- DATA CALCULATION ---
@@ -1417,7 +1439,8 @@
         
         // Group students by Grade
         const studentsByGrade = students.reduce((acc, student) => {
-            const grade = student.grade || 'Unassigned';
+            // Use the normalized grade for grouping
+            const grade = student.grade ? student.grade.trim().toUpperCase() : 'UNASSIGNED';
             if (!acc[grade]) {
                 acc[grade] = [];
             }
@@ -1850,7 +1873,7 @@
                           1
                         )}%</p>
                         <p class="text-xs text-gray-400">(${
-                          stats.totalPresent + stats.totalAbsent + stats.totalLate
+                          stats.totalPresent + stats.totalLate
                         } / ${
           stats.totalPresent + stats.totalAbsent + stats.totalLate
         } expected records)</p>
@@ -1891,7 +1914,7 @@
           
           // Filter exam records based on selected grade
           const filteredExamRecords = allExamRecords.filter(r => 
-              reportGradeFilter === 'All' || r.studentGrade === reportGradeFilter
+              reportGradeFilter === 'All' || (r.studentGrade && String(r.studentGrade).trim().toUpperCase() === reportGradeFilter.trim().toUpperCase())
           );
           
           // 1. Group records by exam batch (Subject, Type, Date)
@@ -2087,6 +2110,7 @@
         }
         
         // --- Step 2: Load Students and Scoring UI (Only runs if a grade is selected) ---
+        // This relies on the FIXED getStudentsByGrade function
         const studentsForScoring = getStudentsByGrade(selectedExamGrade);
         
         const studentScoreRows = studentsForScoring.map(s => `
@@ -2315,5 +2339,5 @@
         initializeFirebase();
       };
     </script>
-  </body>
+  </body >
 </html>
