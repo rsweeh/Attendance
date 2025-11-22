@@ -436,6 +436,36 @@
             </form>
         </div>
     </div>
+    
+    <!-- MODAL 3: Editor Login Modal (NEW) -->
+    <div id="editor-login-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm transform transition-all duration-300">
+            <div class="p-6 border-b flex justify-between items-center bg-indigo-50">
+                <h3 class="text-xl font-bold text-indigo-700">Editor Login Required</h3>
+                <button type="button" onclick="closeModal('editor-login-modal')" class="text-gray-500 hover:text-gray-800">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="editor-login-form">
+                <div class="p-6 space-y-4">
+                    <p class="text-sm text-gray-600">Enter the secret key to enable Read/Write permissions.</p>
+                    <div>
+                        <label for="editor-password" class="block text-sm font-medium text-gray-700">Secret Editor Key</label>
+                        <input type="password" id="editor-password" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <p id="login-message" class="text-sm font-semibold h-5 text-red-600"></p>
+                </div>
+                <div class="p-6 border-t bg-gray-50 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('editor-login-modal')" class="px-4 py-2 bg-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-400 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
+                        Log In
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
     <!-- Firebase Imports -->
@@ -472,6 +502,9 @@
         messagingSenderId: "22011088154",
         appId: "1:22011088154:web:13a1655b254138448830a3"
       };
+      
+      // --- NEW: Hardcoded Secret for Editor Access ---
+      const EDITOR_PASSWORD = 'Dsbnpl@1488'; // CHANGE THIS TO A SECURE, SECRET KEY IN A REAL APPLICATION
 
       // Global Firebase Variables (Mandatory Canvas Setup)
       // We prioritize the environment variable if present, otherwise use the user's hardcoded config.
@@ -518,23 +551,35 @@
       const mobileUserStatusEl = document.getElementById("mobile-user-status"); // Mobile status
       const examDetailsModal = document.getElementById('exam-details-modal');
       const editStudentModal = document.getElementById('edit-student-modal'); 
+      const editorLoginModal = document.getElementById('editor-login-modal');
 
 
       // --- INITIALIZATION & AUTH ---
 
       function initializeEditorMode() {
-        // Use localStorage to persist editor mode state
-        const storedMode = localStorage.getItem('isEditorMode');
-        isEditorMode = storedMode === 'true'; // Default is false if null/undefined
+        // Check if the current user ID matches the stored editor session ID
+        const editorSessionId = localStorage.getItem('editor_session_id');
+        isEditorMode = editorSessionId === userId; // Only sets to true if UID matches stored ID
         updateEditorModeUI();
       }
 
-      function toggleEditorMode() {
-        isEditorMode = !isEditorMode;
-        localStorage.setItem('isEditorMode', isEditorMode ? 'true' : 'false');
-        updateEditorModeUI();
-        // Re-render the current view to apply conditional rendering based on mode
-        renderView(currentView); 
+      window.toggleEditorMode = function() {
+        if (!userId) {
+            showMessage("Authentication required: Please wait for Firebase connection.", "red");
+            return;
+        }
+
+        if (isEditorMode) {
+            // If currently in Editor Mode, switch OFF and clear session
+            isEditorMode = false;
+            localStorage.removeItem('editor_session_id');
+            updateEditorModeUI();
+            // Re-render the current view to apply conditional rendering based on mode
+            renderView(currentView); 
+        } else {
+            // If currently in View Only Mode, initiate login process
+            showLoginModal();
+        }
       }
       
       function updateEditorModeUI() {
@@ -557,12 +602,12 @@
         } else {
             desktopStatusEl.textContent = "Mode: Viewer (Read Only)";
             desktopStatusEl.className = "text-sm font-semibold text-yellow-300 mb-1";
-            desktopBtn.textContent = "Switch to Editor Mode";
+            desktopBtn.textContent = "Log in as Editor"; // Updated text
             desktopBtn.className = "bg-yellow-600 text-white hover:bg-yellow-700 px-3 py-1 text-xs font-semibold rounded-lg w-full transition duration-150";
             
             mobileStatusEl.textContent = "Viewer Mode";
             mobileStatusEl.className = "text-[0.6rem] font-semibold text-yellow-600 mt-1";
-            mobileBtn.textContent = "Switch to Edit";
+            mobileBtn.textContent = "Editor Login"; // Updated text
             mobileBtn.className = "bg-yellow-500 text-white hover:bg-yellow-600 px-2 py-0.5 text-[0.5rem] font-semibold rounded-lg transition duration-150";
         }
       }
@@ -583,8 +628,6 @@
             renderView("dashboard");
             return;
         }
-
-        initializeEditorMode(); // Initialize Editor Mode State
 
         console.log("[DIAGNOSTIC] Attempting Firebase Initialization...");
         // Initialize Firebase
@@ -617,13 +660,18 @@
                 mobileUserStatusEl.textContent = "Connected";
                 userIdDisplayEl.textContent = `User ID: ${userId}`;
 
+                // --- NEW: Check for existing editor session once user ID is known ---
+                initializeEditorMode();
+                
                 // Once authenticated, start listening for data
                 setupDataListeners();
               } else {
                 userId = null;
+                isEditorMode = false;
                 userStatusEl.textContent = "Status: Disconnected";
                 mobileUserStatusEl.textContent = "Disconnected";
                 userIdDisplayEl.textContent = `User ID: N/A`;
+                updateEditorModeUI();
               }
             });
         }
@@ -634,6 +682,50 @@
         // Attach toggle listeners globally after the buttons are rendered
         document.getElementById('toggle-editor-btn-desktop').addEventListener('click', toggleEditorMode);
         document.getElementById('toggle-editor-btn-mobile').addEventListener('click', toggleEditorMode);
+        
+        // Attach login handler to the new form
+        document.getElementById('editor-login-form').addEventListener('submit', handleEditorLogin);
+      }
+      
+      // --- NEW: Editor Login Logic ---
+      function showLoginModal() {
+          document.getElementById('editor-password').value = '';
+          document.getElementById('login-message').textContent = '';
+          editorLoginModal.classList.remove('hidden');
+      }
+
+      function handleEditorLogin(e) {
+          e.preventDefault();
+          const passwordInput = document.getElementById('editor-password');
+          const messageEl = document.getElementById('login-message');
+          const enteredPassword = passwordInput.value.trim();
+
+          if (enteredPassword === EDITOR_PASSWORD) {
+              // Successful login
+              messageEl.textContent = 'Login successful!';
+              messageEl.classList.remove('text-red-600');
+              messageEl.classList.add('text-green-600');
+              
+              // Grant editor mode for the current session and user
+              isEditorMode = true;
+              localStorage.setItem('editor_session_id', userId);
+
+              // Close modal and refresh UI/view
+              setTimeout(() => {
+                  closeModal('editor-login-modal');
+                  updateEditorModeUI();
+                  renderView(currentView);
+                  // Ensure the user gets feedback in the main UI
+                  showMessage('Editor Mode Activated!', 'green');
+              }, 500);
+
+          } else {
+              // Failed login
+              messageEl.textContent = 'Invalid secret key.';
+              messageEl.classList.add('text-red-600');
+              passwordInput.value = '';
+              passwordInput.focus();
+          }
       }
 
       // --- FIREBASE PATHS & FUNCTIONS ---
@@ -1772,7 +1864,7 @@
                                     Mark All Present (Grade ${attendanceFilterGrade})
                                 </button>
                                 <p class="text-xs text-indigo-500">Marks Sun-Fri as 'Present' for the selected grade. Overwrites existing data.</p>
-                                ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold">Switch to Editor Mode to use quick mark.</p>' : ''}
+                                ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold">Log in as Editor to use quick mark.</p>' : ''}
                             </div>
                         </div>
                     </div>
@@ -2296,7 +2388,7 @@
                     <select id="exam-grade-selector" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm text-lg" ${isEditorMode ? '' : 'disabled'}>
                         ${gradeOptions}
                     </select>
-                    ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold mt-4">Switch to Editor Mode to select a grade for scoring.</p>' : ''}
+                    ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold mt-4">Log in as Editor to select a grade for scoring.</p>' : ''}
                 </div>
              `;
              if (isEditorMode) {
@@ -2399,7 +2491,7 @@
                     <button id="save-scores-btn" class="mt-6 w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-150 ${buttonDisabledClass}" ${formDisabledAttr}>
                         Save Exam Results
                     </button>
-                    ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold mt-2">Switch to Editor Mode to enter and save scores.</p>' : ''}
+                    ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold mt-2">Log in as Editor to enter and save scores.</p>' : ''}
                 </div>
             </div>
         `;
@@ -2539,11 +2631,15 @@
               if (!editStudentModal.classList.contains('hidden')) {
                   closeModal('edit-student-modal');
               }
+              // Close login modal on escape
+              if (!editorLoginModal.classList.contains('hidden')) {
+                  closeModal('editor-login-modal');
+              }
           }
       });
       
       // Close modal when clicking outside the modal content area
-      [examDetailsModal, editStudentModal].forEach(modal => {
+      [examDetailsModal, editStudentModal, editorLoginModal].forEach(modal => {
           modal.addEventListener('click', (e) => {
               if (e.target === modal) {
                   closeModal(modal.id);
