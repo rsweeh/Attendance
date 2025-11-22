@@ -30,22 +30,16 @@
       }
       /* Style for the calendar cell */
       .calendar-cell {
-        width: 32px; /* Adjusted fixed width for smaller screens (was 40px) */
-        min-width: 32px;
+        width: 40px; /* Fixed width for date columns */
+        min-width: 40px;
         height: 40px;
         text-align: center;
         padding: 0;
         cursor: pointer;
         transition: background-color 0.1s;
-        font-size: 0.7rem; /* text-xs equivalent */
+        font-size: 0.75rem; /* text-xs */
         font-weight: 600;
         line-height: 1; /* Adjust line height for the two lines of text */
-      }
-      /* Ensure date headers are also sized correctly */
-      .calendar-header-cell {
-          width: 32px;
-          min-width: 32px;
-          padding: 4px 0;
       }
       .calendar-cell:hover:not(.day-header):not(.holiday) {
         background-color: #e5e7eb; /* gray-200 */
@@ -94,68 +88,110 @@
       /* Hide regular sidebar on small screens */
       @media (max-width: 767px) {
           #sidebar {
-              display: none;
+              /* Remove absolute positioning to hide it completely */
+              display: none !important;
+          }
+          /* Ensure content area uses full width on mobile */
+          .main-content {
+            padding-left: 1rem;
+            padding-right: 1rem;
           }
       }
-      /* Style for clickable test link */
-      .exam-batch-link {
-          cursor: pointer;
-          color: #4f46e5; /* indigo-600 */
-          font-weight: 600;
-          text-decoration: underline;
-      }
-      .exam-batch-link:hover {
-          color: #3730a3; /* indigo-800 */
-      }
       
-      /* Style for the improved Report tabs */
-      .report-tab-btn-style {
-          padding: 8px 16px;
-          border-radius: 9999px; /* Pill shape */
-          font-weight: 600;
-          transition: background-color 0.15s, color 0.15s;
-          border: 1px solid transparent;
+      /* New Card Styles for Dashboard */
+      .metric-card {
+          display: flex;
+          align-items: center;
+          padding: 1.5rem;
+          background-color: white;
+          border-radius: 0.75rem;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+          border: 1px solid #e5e7eb;
+          transition: transform 0.1s;
       }
-      .report-tab-btn-style.active {
-          background-color: #4f46e5; /* indigo-600 */
+      .metric-card:hover {
+          transform: translateY(-2px);
+      }
+      .icon-container {
+          padding: 0.75rem;
+          border-radius: 9999px;
           color: white;
-          border-color: #4f46e5;
+          margin-right: 1rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
       }
-      .report-tab-btn-style:not(.active):hover {
-          background-color: #e0e7ff; /* indigo-100 */
-          color: #3730a3; /* indigo-800 */
+      .metric-value {
+          font-size: 1.875rem; /* text-3xl */
+          font-weight: 700; /* font-bold */
+          line-height: 1;
       }
-
-      /* Sticky Column Styles for Monthly Attendance */
+      .metric-label {
+          font-size: 0.875rem; /* text-sm */
+          font-weight: 500; /* font-medium */
+          color: #6b7280; /* gray-500 */
+      }
+      /* Style for sticky table headers/columns */
       .sticky-col-roll {
           position: sticky;
           left: 0;
+          background-color: #4f46e5; /* indigo-600 */
           z-index: 10;
-          background-color: inherit;
-          border-right: 1px solid #e5e7eb; /* gray-200 */
+          box-shadow: 2px 0 2px -2px rgba(0,0,0,0.2);
+          padding-left: 0.25rem; /* p-1 */
+          padding-right: 0.25rem; /* p-1 */
       }
       .sticky-col-name {
           position: sticky;
-          left: 32px; /* Roll No width */
+          left: 32px; /* Width of roll column (32px) */
+          background-color: #4f46e5; /* indigo-600 */
           z-index: 10;
-          background-color: inherit;
-          border-right: 1px solid #e5e7eb;
+          box-shadow: 2px 0 2px -2px rgba(0,0,0,0.2);
+          padding-left: 0.5rem; /* p-2 */
+          padding-right: 0.5rem; /* p-2 */
+          width: 96px; /* 96px width */
+          min-width: 96px;
+          max-width: 96px;
+          overflow: hidden;
+          text-overflow: ellipsis;
       }
-      /* Ensure sticky column backgrounds are correct in the header */
-      #monthly-attendance-header .sticky-col-roll {
-          background-color: #4f46e5 !important; /* indigo-600 */
-          left: 0;
-          border-right: 1px solid #3730a3; /* indigo-800 */
+      /* Apply sticky background override for body cells too */
+      #monthly-calendar-body .sticky-col-roll {
+          background-color: white;
+          color: #1f2937; /* gray-800 */
+          font-weight: 500;
+          z-index: 5;
       }
-      #monthly-attendance-header .sticky-col-name {
-          background-color: #4f46e5 !important; /* indigo-600 */
-          left: 32px;
-          border-right: none;
+       #monthly-calendar-body .sticky-col-name {
+          background-color: white;
+          color: #374151; /* gray-700 */
+          z-index: 5;
       }
-      /* Ensure body sticky columns have white background */
-      #monthly-calendar-body .sticky-col-roll,
-      #monthly-calendar-body .sticky-col-name {
-          background-color: white !important;
+      .calendar-header-cell {
+        width: 40px;
+        min-width: 40px;
+        padding: 0;
+      }
+      /* Custom style for Top Student lists */
+      .top-student-list li {
+          display: flex;
+          justify-content: space-between;
+          padding: 0.5rem 0;
+          border-bottom: 1px dashed #e5e7eb;
+          font-size: 0.9rem;
+      }
+      .top-student-list li:last-child {
+          border-bottom: none;
+      }
+      .student-rank {
+          font-weight: 700;
+          color: #4f46e5;
+          margin-right: 0.5rem;
+          min-width: 20px;
+          text-align: center;
+      }
+      .student-value {
+          font-weight: 600;
       }
     </style>
   </head>
@@ -177,7 +213,7 @@
               <a
                 href="#"
                 data-view="dashboard"
-                class="menu-item desktop-nav flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700 active-nav"
+                class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700 active-nav"
               >
                 <svg
                   class="w-5 h-5 mr-3"
@@ -198,7 +234,7 @@
               <a
                 href="#"
                 data-view="students"
-                class="menu-item desktop-nav flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
+                class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
               >
                 <svg
                   class="w-5 h-5 mr-3"
@@ -219,7 +255,7 @@
               <a
                 href="#"
                 data-view="attendance"
-                class="menu-item desktop-nav flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
+                class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
               >
                 <svg
                   class="w-5 h-5 mr-3"
@@ -240,7 +276,7 @@
               <a
                 href="#"
                 data-view="reports"
-                class="menu-item desktop-nav flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
+                class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
               >
                 <svg
                   class="w-5 h-5 mr-3"
@@ -261,7 +297,7 @@
               <a
                 href="#"
                 data-view="exams"
-                class="menu-item desktop-nav flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
+                class="menu-item flex items-center p-3 rounded-lg mb-2 transition duration-150 hover:bg-indigo-700"
               >
                 <svg
                   class="w-5 h-5 mr-3"
@@ -334,7 +370,6 @@
                 <p id="mobile-user-status" class="text-[0.6rem] font-semibold text-gray-500">...</p>
             </div>
       </div>
-
     </div>
     
     <!-- MODAL 1: Exam Details Modal Container (Hidden by default) -->
@@ -416,18 +451,17 @@
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
       import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-      // --- FIREBASE CONFIGURATION (Hardcoded for Netlify Deployment) ---
-      const FIREBASE_CONFIG = {
-        apiKey: "AIzaSyAjfgjWwe3yBGsC2SjQGbF5a4rWf8rXyZM",
-        authDomain: "student-attendance-a9e41.firebaseapp.com",
-        projectId: "student-attendance-a9e41",
-        storageBucket: "student-attendance-a9e41.firebasestorage.app",
-        messagingSenderId: "22011088154",
-        appId: "1:22011088154:web:13a1655b254138448830a3",
-      };
-      // The projectId is used as the unique identifier for the Firestore path
-      const DEPLOYMENT_APP_ID = FIREBASE_CONFIG.projectId; 
-      const INITIAL_AUTH_TOKEN = null; // Not needed for Netlify
+      // Global Firebase Variables (Mandatory Canvas Setup)
+      const appId =
+        typeof __app_id !== "undefined" ? __app_id : "default-app-id";
+      const firebaseConfig =
+        typeof __firebase_config !== "undefined"
+          ? JSON.parse(__firebase_config)
+          : null;
+      const initialAuthToken =
+        typeof __initial_auth_token !== "undefined"
+          ? __initial_auth_token
+          : null;
 
       let db, auth; // Declare Firebase instances globally
       let students = []; // Holds all student records
@@ -457,7 +491,7 @@
       // --- FIREBASE INITIALIZATION ---
 
       function initializeFirebase() {
-        if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.projectId) {
+        if (!firebaseConfig) {
           console.error("Firebase configuration is missing.");
           userStatusEl.textContent = "Error: Config Missing.";
           mobileUserStatusEl.textContent = "Error!";
@@ -466,7 +500,7 @@
 
         console.log("[DIAGNOSTIC] Attempting Firebase Initialization...");
         // Initialize Firebase
-        const app = initializeApp(FIREBASE_CONFIG);
+        const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
 
@@ -493,12 +527,12 @@
       // --- FIREBASE PATHS & FUNCTIONS ---
 
       const getStudentCollectionRef = () =>
-        collection(db, "artifacts", DEPLOYMENT_APP_ID, "public", "data", "students");
+        collection(db, "artifacts", appId, "public", "data", "students");
       const getAttendanceCollectionRef = () =>
         collection(
           db,
           "artifacts",
-          DEPLOYMENT_APP_ID,
+          appId,
           "public",
           "data",
           "attendance_records"
@@ -507,7 +541,7 @@
         collection(
           db,
           "artifacts",
-          DEPLOYMENT_APP_ID,
+          appId,
           "public",
           "data",
           "exam_results"
@@ -516,8 +550,8 @@
 
       async function handleAuth() {
         try {
-          if (INITIAL_AUTH_TOKEN) {
-            await signInWithCustomToken(auth, INITIAL_AUTH_TOKEN);
+          if (initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
           } else {
             // Sign in anonymously for public data access
             await signInAnonymously(auth);
@@ -637,7 +671,7 @@
 
         for (let day = 1; day <= daysInMonth; day++) {
           const currentDate = new Date(year, month - 1, day);
-          const dateStr = currentDate.toISOString().slice(0, 10);
+          const dateStr = formatDateLocal(currentDate); // **FIXED: Use local format for saving**
 
           const dayOfWeek = currentDate.getDay(); // 0=Sun, 6=Sat
 
@@ -857,7 +891,7 @@
               allExamRecords.push({ id: doc.id, ...doc.data() });
             });
 
-            if (currentView === "reports" || currentView === "students" || currentView === "exams") { 
+            if (currentView === "reports" || currentView === "students" || currentView === "exams" || currentView === "dashboard") { 
               renderView(currentView); 
             }
           },
@@ -869,6 +903,15 @@
       
       // --- HELPER FUNCTIONS ---
 
+      // **FIXED**: Helper function to ensure YYYY-MM-DD format using local time components
+      function formatDateLocal(date) {
+          const year = date.getFullYear();
+          // Month is 0-indexed in JS Date, so +1
+          const month = String(date.getMonth() + 1).padStart(2, '0'); 
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+      }
+      
       // **FIXED**: Normalizes both the filter grade and the student's grade for reliable matching.
       function getStudentsByGrade(grade) {
           const normalizedFilter = grade ? grade.trim().toUpperCase() : null;
@@ -885,13 +928,12 @@
       // --- DATA CALCULATION ---
 
       function calculateAttendanceStats() {
-        // ... (function body remains the same, it operates on 'students' array)
         const stats = {
           totalStudents: students.length,
           totalAttendanceDays: 0,
-          totalPresent: 0,
-          totalAbsent: 0,
-          totalLate: 0,
+          totalPresent: 0, // Total P marks (raw count)
+          totalAbsent: 0, // Total A marks (raw count)
+          totalLate: 0, // Total L marks (raw count)
           totalPublicHolidays: 0,
           totalPresentUntilLastMonth: 0,
           studentStats: {}, // {studentId: {present, absent, late, publicHoliday, percentage, presentThisMonth, presentTillLastMonth}}
@@ -899,7 +941,7 @@
 
         const daySet = new Set();
         const today = new Date();
-        const currentMonthPrefix = today.toISOString().slice(0, 7);
+        const currentMonthPrefix = formatDateLocal(today).slice(0, 7); // **FIXED: Use local formatter**
 
         students.forEach((s) => {
           stats.studentStats[s.id] = {
@@ -911,6 +953,7 @@
             percentage: 0,
             presentThisMonth: 0, 
             presentTillLastMonth: 0,
+            overallAttendancePercent: 0, // NEW: Attendance percentage for dashboard
           };
         });
 
@@ -918,7 +961,8 @@
           daySet.add(record.date);
           const studentId = record.studentId;
           const status = record.status;
-          const recordDatePrefix = record.date.slice(0, 7);
+          const recordDate = record.date;
+          const recordDatePrefix = recordDate.slice(0, 7);
 
           if (stats.studentStats[studentId]) {
             const studentStat = stats.studentStats[studentId];
@@ -956,7 +1000,7 @@
         stats.totalAttendanceDays = daySet.size;
 
         // Calculate student percentages and global percentage
-        let totalExpectedMarks = 0; // P + A + L (excluding PH)
+        let totalExpectedMarks = 0; // P + A + L (excluding PH) 
         let totalActualPresent = 0; // P + L
 
         students.forEach((s) => {
@@ -972,9 +1016,13 @@
 
             if (expectedMarks > 0) {
               // Percentage is (Present + Late) / (Present + Absent + Late)
-              studentStat.percentage =
+              const percentage =
                 ((studentStat.present + studentStat.late) / expectedMarks) *
                 100;
+              studentStat.percentage = percentage;
+              studentStat.overallAttendancePercent = percentage; // Use this for dashboard ranking
+            } else {
+                studentStat.overallAttendancePercent = 0;
             }
           }
         });
@@ -983,38 +1031,34 @@
           totalExpectedMarks > 0
             ? (totalActualPresent / totalExpectedMarks) * 100
             : 0;
-
-        // Determine top 10 students
-        const sortedStudents = students
+        
+        // Prepare Top Students list based on Attendance
+        stats.topStudentsByAttendance = students
           .map((s) => ({
             name: s.name,
-            percentage: stats.studentStats[s.id]?.percentage || 0,
+            percentage: stats.studentStats[s.id]?.overallAttendancePercent || 0,
           }))
-          .sort((a, b) => b.percentage - a.percentage);
-
-        stats.top10Students = sortedStudents.slice(0, 10);
+          .sort((a, b) => b.percentage - a.percentage)
+          .slice(0, 10);
 
         return stats;
       }
       
+      // NEW: Calculate exam averages for all students
       function calculateStudentExamAverages() {
-        const studentAverages = {}; // {studentId: {totalScore, totalMaxMarks, percentage, subjects: {subjectName: averagePercent}}}
+        const studentAverages = {}; // {studentId: {totalScore, totalMaxMarks, percentage, examCount}}
 
         students.forEach(s => {
             studentAverages[s.id] = {
                 totalScore: 0,
                 totalMaxMarks: 0,
                 percentage: 0,
-                subjects: {},
                 examCount: 0
             };
         });
 
-        const subjectScores = {}; // {studentId: {subject: {scoreSum, maxSum}}}
-
         allExamRecords.forEach(record => {
             const studentId = record.studentId;
-            const subject = record.subject;
             const score = record.score;
             const maxMarks = record.maxMarks;
 
@@ -1023,16 +1067,6 @@
                 studentAverages[studentId].totalScore += score;
                 studentAverages[studentId].totalMaxMarks += maxMarks;
                 studentAverages[studentId].examCount++;
-
-                // Subject Totals
-                if (!subjectScores[studentId]) {
-                    subjectScores[studentId] = {};
-                }
-                if (!subjectScores[studentId][subject]) {
-                    subjectScores[studentId][subject] = { scoreSum: 0, maxSum: 0 };
-                }
-                subjectScores[studentId][subject].scoreSum += score;
-                subjectScores[studentId][subject].maxSum += maxMarks;
             }
         });
 
@@ -1042,19 +1076,19 @@
             if (avg.totalMaxMarks > 0) {
                 avg.percentage = (avg.totalScore / avg.totalMaxMarks) * 100;
             }
-
-            // Calculate subject averages
-            if (subjectScores[studentId]) {
-                Object.keys(subjectScores[studentId]).forEach(subject => {
-                    const sub = subjectScores[studentId][subject];
-                    if (sub.maxSum > 0) {
-                        avg.subjects[subject] = (sub.scoreSum / sub.maxSum) * 100;
-                    }
-                });
-            }
         });
+        
+        // Prepare Top Students list based on Exam Marks
+        const topStudentsByMarks = students
+            .map(s => ({
+                name: s.name,
+                percentage: studentAverages[s.id]?.percentage || 0,
+            }))
+            .filter(s => studentAverages[students.find(st => st.name === s.name)?.id]?.examCount > 0) // Only include students who took at least one exam
+            .sort((a, b) => b.percentage - a.percentage)
+            .slice(0, 10);
 
-        return studentAverages;
+        return { studentAverages, topStudentsByMarks };
       }
 
       // --- UI & STATE MANAGEMENT ---
@@ -1062,6 +1096,25 @@
       function getStatusClasses(status) {
         return `status-${status.charAt(0)}`;
       }
+      
+      // NEW: Helper function to get the icon/text for the status
+      function getStatusContent(status) {
+        switch (status) {
+            case 'P':
+                return '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>';
+            case 'A':
+                return '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>';
+            case 'L':
+                return 'L';
+            case 'PH': // Public Holiday
+                return 'H';
+            case 'U':
+                return ''; // Empty for unmarked
+            default:
+                return '-';
+        }
+      }
+
 
       function showMessage(text, color) {
         const messageEl = document.getElementById("message");
@@ -1084,7 +1137,7 @@
 
       function setActiveNav(viewName) {
         // 1. Desktop Nav
-        document.querySelectorAll(".desktop-nav").forEach((item) => {
+        document.querySelectorAll(".menu-item").forEach((item) => {
           item.classList.remove("active-nav");
           if (item.dataset.view === viewName) {
             item.classList.add("active-nav");
@@ -1114,8 +1167,6 @@
         }
 
         viewContainer.innerHTML = "";
-
-        // The sidebar is hidden on mobile now, so we don't need the toggle logic here
         
         switch (viewName) {
           case "dashboard":
@@ -1140,48 +1191,107 @@
 
       function renderDashboard() {
         const stats = calculateAttendanceStats();
+        const examStats = calculateStudentExamAverages(); // NEW: Calculate exam stats
+        
+        const totalStudents = stats.totalStudents;
+        const totalPresentMarks = stats.totalPresent + stats.totalLate;
+        const totalAbsentMarks = stats.totalAbsent;
+        const overallAttendancePercent = stats.globalPercentage;
+        
+        // Lists for Top Students
+        const topAttendanceListHtml = stats.topStudentsByAttendance
+            .map((s, index) => `
+                <li class="hover:bg-indigo-50/50 transition duration-100 p-2 rounded-lg">
+                    <span class="student-rank">${index + 1}.</span>
+                    <span class="truncate">${s.name}</span>
+                    <span class="student-value text-green-600">${s.percentage.toFixed(1)}%</span>
+                </li>
+            `)
+            .join("") || '<li class="text-gray-500 text-center">No attendance data to rank.</li>';
 
-        const topStudentsList =
-          stats.top10Students
-            .map(
-              (s) =>
-                `<li class="text-gray-700">${s.name}: ${s.percentage.toFixed(
-                  1
-                )}%</li>`
-            )
-            .join("") || "<li>No data yet.</li>";
+        const topMarksListHtml = examStats.topStudentsByMarks
+            .map((s, index) => `
+                <li class="hover:bg-indigo-50/50 transition duration-100 p-2 rounded-lg">
+                    <span class="student-rank">${index + 1}.</span>
+                    <span class="truncate">${s.name}</span>
+                    <span class="student-value text-indigo-600">${s.percentage.toFixed(1)}%</span>
+                </li>
+            `)
+            .join("") || '<li class="text-gray-500 text-center">No exam results available to rank.</li>';
 
+        // --- Dashboard HTML structure ---
         const html = `
-                <div class="space-y-6">
-                    <p class="text-xl font-medium text-gray-600">Welcome to the Dashboard! Here's a quick overview of your class data.</p>
+                <div class="space-y-8">
+                    <p class="text-xl font-medium text-gray-600">Performance and Attendance Overview</p>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
-                            <p class="text-sm font-medium text-gray-500">Total Students</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${
-                              stats.totalStudents
-                            }</p>
+                    <!-- 1. Metric Cards (4 Cards Grid) -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                        
+                        <!-- Total Students -->
+                        <div class="metric-card">
+                            <div class="icon-container bg-blue-500">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M9 20H4v-2a3 3 0 015-2.236M9 20v-2a3 3 0 00-5.356-1.857m11.115-7.443-2.289-.968A3.003 3.003 0 0015 10a3 3 0 00-2.356-1.185l-2.29-.968C9.55 7.14 8.789 7 8 7V6c0-1.105.895-2 2-2h4c1.105 0 2 .895 2 2v1c.789 0 1.55.14 2.228.455l2.289.968A3.003 3.003 0 0121 12a3.003 3.003 0 01-2.356 2.815l-2.289.968m-14.777-6.002C5.972 8.358 6 9.176 6 10c0 1.831-.502 3.513-1.398 4.87C4.156 15.659 3.197 16.5 2 16.5"></path></svg>
+                            </div>
+                            <div>
+                                <div class="metric-value text-blue-800">${totalStudents}</div>
+                                <div class="metric-label">Total Students</div>
+                            </div>
                         </div>
-                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
-                            <p class="text-sm font-medium text-gray-500">Total Present (Cumulative)</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${
-                              stats.totalPresent + stats.totalLate
-                            }</p>
+
+                        <!-- Total Present Marks -->
+                        <div class="metric-card">
+                            <div class="icon-container bg-green-500">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.047 12.007 12.007 0 00-2.479 6.012c0 5.484 3.424 10.334 8.411 11.954l.589.179.589-.179c4.987-1.62 8.411-6.47 8.411-11.954a12.007 12.007 0 00-2.479-6.012z"></path></svg>
+                            </div>
+                            <div>
+                                <div class="metric-value text-green-800">${totalPresentMarks}</div>
+                                <div class="metric-label">Total Present/Late Marks</div>
+                            </div>
                         </div>
-                        <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
-                            <p class="text-sm font-medium text-gray-500">Overall Attendance %</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">${stats.globalPercentage.toFixed(
-                              1
-                            )}%</p>
+
+                        <!-- Total Absent Marks -->
+                        <div class="metric-card">
+                            <div class="icon-container bg-red-500">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m0 0L2 2"></path></svg>
+                            </div>
+                            <div>
+                                <div class="metric-value text-red-800">${totalAbsentMarks}</div>
+                                <div class="metric-label">Total Absent Marks</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Overall Attendance Rate -->
+                        <div class="metric-card">
+                            <div class="icon-container bg-yellow-500">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <div>
+                                <div class="metric-value text-yellow-800">${overallAttendancePercent.toFixed(1)}%</div>
+                                <div class="metric-label">Overall Attendance Rate</div>
+                            </div>
                         </div>
                     </div>
                     
-                    <div id="dashboard-charts" class="mt-8 bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Top 10 Students by Attendance</h3>
-                        <ol class="list-decimal list-inside space-y-1">
-                            ${topStudentsList}
-                        </ol>
-                        <p class="text-sm text-gray-500 italic mt-4">Calculated based on marked attendance days (excluding PH).</p>
+                    <!-- 2. Performance Charts/Lists (Two Columns) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+                        
+                        <!-- Top Students by Attendance -->
+                        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                            <h3 class="text-xl font-semibold mb-4 text-green-700 border-b pb-2">Top 10 Students by Attendance %</h3>
+                            <p class="text-sm text-gray-500 mb-4">Percentage of days marked Present or Late out of all marked days.</p>
+                            <ul class="top-student-list space-y-2">
+                                ${topAttendanceListHtml}
+                            </ul>
+                        </div>
+                        
+                        <!-- Top Students by Exam Marks -->
+                        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                            <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Top 10 Students by Overall Exam %</h3>
+                            <p class="text-sm text-gray-500 mb-4">Cumulative average percentage across all recorded exams.</p>
+                            <ul class="top-student-list space-y-2">
+                                ${topMarksListHtml}
+                            </ul>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1189,116 +1299,61 @@
       }
 
       function renderStudentManagement() {
-        // Use a dataset attribute on the view container to maintain tab state across renders
-        let currentStudentTab = viewContainer.dataset.studentTab || 'management';
-
-        const tabHtml = `
-            <div class="space-y-6">
-                <p id="message" class="text-sm font-semibold h-5"></p>
-                
-                <!-- Tab Navigation for Student Management -->
-                <div class="mb-6">
-                    <div class="flex space-x-4">
-                        <button 
-                            data-tab="management" 
-                            class="student-tab-btn report-tab-btn-style ${currentStudentTab === 'management' ? 'active' : 'bg-gray-200 text-gray-700'}"
-                        >
-                            Add / Remove Students
-                        </button>
-                        <button 
-                            data-tab="performance" 
-                            class="student-tab-btn report-tab-btn-style ${currentStudentTab === 'performance' ? 'active' : 'bg-gray-200 text-gray-700'}"
-                        >
-                            Student Performance
-                        </button>
+        viewContainer.innerHTML = `
+                <div class="max-w-3xl mx-auto space-y-6">
+                    
+                    <!-- Add Student Form -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Add New Student</h3>
+                        <form id="add-student-form" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="student-name" class="block text-sm font-medium text-gray-700">Student Name</label>
+                                    <input type="text" id="student-name" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label for="student-rollno" class="block text-sm font-medium text-gray-700">Roll No. (ID)</label>
+                                    <input type="number" id="student-rollno" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label for="student-grade" class="block text-sm font-medium text-gray-700">Grade Level</label>
+                                    <input type="text" id="student-grade" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., 9, 10A, 7B">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-150">
+                                Add Student
+                            </button>
+                        </form>
                     </div>
-                    <div class="mt-4 h-1"></div>
-                </div>
-                
-                <div id="student-tab-content">
-                    <!-- Tab content loaded here -->
-                </div>
-            </div>
-        `;
 
-        viewContainer.innerHTML = tabHtml;
-        
-        // Set up tab switching logic
-        document.querySelectorAll('.student-tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const newTab = e.target.dataset.tab;
-                viewContainer.dataset.studentTab = newTab; // Save new state
-                renderView('students'); // Re-render the view to apply changes
-            });
-        });
-        
-        // Render the correct tab content
-        const contentEl = document.getElementById('student-tab-content');
-        if (currentStudentTab === 'management') {
-            contentEl.innerHTML = renderAddDeleteStudentTab();
-            // Reattach event listeners after DOM update
-            setupStudentManagementListeners();
-            updateStudentListMgmt();
-        } else {
-            contentEl.innerHTML = renderStudentPerformanceTab();
-        }
-      }
-
-      function renderAddDeleteStudentTab() {
-        return `
-            <div class="max-w-4xl mx-auto space-y-6">
-                
-                <!-- Add Student Form -->
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Add New Student (${students.length})</h3>
-                    <form id="add-student-form" class="space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <label for="student-name" class="block text-sm font-medium text-gray-700">Student Name</label>
-                                <input type="text" id="student-name" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-                            <div>
-                                <label for="student-rollno" class="block text-sm font-medium text-gray-700">Roll No. (ID)</label>
-                                <input type="number" id="student-rollno" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-                            <div>
-                                <label for="student-grade" class="block text-sm font-medium text-gray-700">Grade Level</label>
-                                <input type="text" id="student-grade" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., 9, 10A, 7B">
-                            </div>
+                    <!-- Student List Table -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Current Students List</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Roll No.</th>
+                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Name</th>
+                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Grade</th>
+                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="student-list-mgmt" class="divide-y divide-gray-200">
+                                    <!-- Student rows here -->
+                                </tbody>
+                            </table>
                         </div>
-                        <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-150">
-                            Add Student
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Student List Table -->
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Current Students List</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm text-left divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Roll No.</th>
-                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Name</th>
-                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Grade</th>
-                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="student-list-mgmt" class="divide-y divide-gray-200">
-                                <!-- Student rows here -->
-                            </tbody>
-                        </table>
                     </div>
+                    <p id="message" class="text-sm font-semibold h-5"></p>
                 </div>
-            </div>
-        `;
-      }
-      
-      function setupStudentManagementListeners() {
+            `;
+
+        updateStudentListMgmt();
+
         document
           .getElementById("add-student-form")
-          ?.addEventListener("submit", (e) => {
+          .addEventListener("submit", (e) => {
             e.preventDefault();
             const name = document.getElementById("student-name").value.trim();
             const rollNo = parseInt(
@@ -1311,33 +1366,17 @@
               document.getElementById("student-name").focus(); // Focus back to name field
             }
           });
-          
-        // **NEW: Edit Student Form Listener**
-        document.getElementById('edit-student-form')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const id = document.getElementById("edit-student-id").value;
-            const name = document.getElementById("edit-student-name").value.trim();
-            const rollNo = parseInt(document.getElementById("edit-student-rollno").value);
-            const grade = document.getElementById("edit-student-grade").value.trim();
-            
-            if (name && rollNo && grade && id) {
-                updateStudentDetails(id, name, rollNo, grade);
-            } else {
-                showEditMessage("All fields must be filled.", "red");
-            }
-        });
-
 
         document
           .getElementById("student-list-mgmt")
-          ?.addEventListener("click", (e) => {
+          .addEventListener("click", (e) => {
             if (e.target.closest(".delete-btn")) {
               const studentId = e.target.closest(".delete-btn").dataset.id;
               if (confirm("Are you sure you want to delete this student permanently?")) {
                   deleteStudent(studentId);
               }
             }
-            // **NEW: Handle Edit Button Click**
+            // Handle Edit Button Click
             if (e.target.closest(".edit-btn")) {
                 const studentId = e.target.closest(".edit-btn").dataset.id;
                 const studentData = students.find(s => s.id === studentId);
@@ -1346,89 +1385,6 @@
                 }
             }
           });
-      }
-      
-      // **NEW: Open Edit Student Modal Function**
-      window.openEditStudentModal = function(student) {
-          document.getElementById("edit-student-id").value = student.id;
-          document.getElementById("edit-student-name").value = student.name;
-          document.getElementById("edit-student-rollno").value = student.rollNo;
-          document.getElementById("edit-student-grade").value = student.grade;
-          showEditMessage("", "green"); // Clear previous messages
-          editStudentModal.classList.remove('hidden');
-      }
-
-      function renderStudentPerformanceTab() {
-          const studentAverages = calculateStudentExamAverages();
-          
-          if (students.length === 0) {
-              return `<div class="p-8 bg-white rounded-xl shadow-lg text-center text-gray-600">No students available.</div>`;
-          }
-          
-          if (Object.keys(studentAverages).every(id => studentAverages[id].examCount === 0)) {
-              return `<div class="p-8 bg-white rounded-xl shadow-lg text-center text-gray-600">No exam results recorded yet. Please add scores in the Exam Results view.</div>`;
-          }
-          
-          // Determine all subjects taken to create dynamic columns
-          const allSubjects = new Set();
-          Object.values(studentAverages).forEach(avg => {
-              Object.keys(avg.subjects).forEach(subject => allSubjects.add(subject));
-          });
-          const subjects = Array.from(allSubjects).sort();
-          
-          // Generate table rows
-          const performanceRows = students.map(s => {
-              const avg = studentAverages[s.id];
-              const percentage = avg?.percentage || 0;
-              
-              let subjectCells = subjects.map(subject => {
-                  const subPercent = avg?.subjects[subject];
-                  if (subPercent !== undefined) {
-                      const colorClass = subPercent >= 70 ? 'text-green-600 font-semibold' : 'text-red-600';
-                      return `<td class="py-3 px-4 text-center ${colorClass}">${subPercent.toFixed(1)}%</td>`;
-                  }
-                  return `<td class="py-3 px-4 text-center text-gray-400">--</td>`;
-              }).join('');
-
-              return `
-                  <tr class="hover:bg-gray-50">
-                      <td class="py-3 px-4 font-medium text-gray-900">${s.rollNo}</td>
-                      <td class="py-3 px-4 text-gray-700">${s.name}</td>
-                      <td class="py-3 px-4 text-gray-700">${s.grade || 'N/A'}</td>
-                      ${subjectCells}
-                      <td class="py-3 px-4 text-center font-extrabold ${percentage >= 70 ? 'text-indigo-600' : 'text-red-600'}">${percentage.toFixed(1)}%</td>
-                      <td class="py-3 px-4 text-center text-gray-500">${avg?.examCount || 0}</td>
-                  </tr>
-              `;
-          }).join('');
-
-          const subjectHeaders = subjects.map(s => 
-            `<th class="py-3 px-4 font-bold text-gray-600 text-center">${s} Avg %</th>`
-          ).join('');
-
-          return `
-              <div class="bg-white p-6 rounded-xl shadow-lg">
-                  <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Exam Performance Breakdown</h3>
-                  <div class="overflow-x-auto">
-                      <table class="min-w-full text-sm text-left divide-y divide-gray-200">
-                          <thead class="bg-gray-50">
-                              <tr>
-                                  <th class="py-3 px-4 font-bold text-gray-600">Roll No.</th>
-                                  <th class="py-3 px-4 font-bold text-gray-600">Name</th>
-                                  <th class="py-3 px-4 font-bold text-gray-600">Grade</th>
-                                  ${subjectHeaders}
-                                  <th class="py-3 px-4 font-bold text-gray-600 text-center sticky right-0 bg-gray-50 border-l border-gray-200">Overall Avg %</th>
-                                  <th class="py-3 px-4 font-bold text-gray-600 text-center">Exams Taken</th>
-                              </tr>
-                          </thead>
-                          <tbody class="divide-y divide-gray-200">
-                              ${performanceRows}
-                          </tbody>
-                      </table>
-                  </div>
-                  <p class="text-xs text-gray-500 italic mt-4">Overall Avg % is calculated across all recorded exams for the student.</p>
-              </div>
-          `;
       }
 
       function updateStudentListMgmt() {
@@ -1475,6 +1431,16 @@
             });
         });
       }
+      
+      // Open Edit Student Modal Function
+      window.openEditStudentModal = function(student) {
+          document.getElementById("edit-student-id").value = student.id;
+          document.getElementById("edit-student-name").value = student.name;
+          document.getElementById("edit-student-rollno").value = student.rollNo;
+          document.getElementById("edit-student-grade").value = student.grade;
+          showEditMessage("", "green"); // Clear previous messages
+          editStudentModal.classList.remove('hidden');
+      }
 
       function renderMonthlyAttendance() {
         const currentYear = monthlyViewDate.getFullYear();
@@ -1482,25 +1448,17 @@
         
         // --- NEW: Filter Students based on selected grade ---
         const studentsForAttendance = getStudentsByGrade(attendanceFilterGrade);
-        // --- END NEW ---
-
-        // Find the first day of the currently selected month
+        
+        // --- Calculate Month/Days ---
         const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
+        const lastDayOfMonth = new Date(currentYear, currentMonth, 0);
+        const daysInMonth = lastDayOfMonth.getDate();
         
-        // Calculate the starting day for the current view (Sunday of the week defined by weeklyViewOffset)
-        const dayOfWeek = firstDayOfMonth.getDay(); // 0 (Sun) to 6 (Sat)
-        const daysToSubtract = dayOfWeek === 0 ? 0 : dayOfWeek; // Assuming Sunday is the start of the week (0)
-        
-        // Calculate the start date of the visible week range
-        const viewStartDate = new Date(currentYear, currentMonth - 1, firstDayOfMonth.getDate() - daysToSubtract + (weeklyViewOffset * 7));
-        
-        // Calculate the end date of the visible week range (7 days later)
-        const viewEndDate = new Date(viewStartDate);
-        viewEndDate.setDate(viewEndDate.getDate() + 6);
-
-        // Determine if the navigation buttons should be disabled
-        const prevButtonDisabled = viewStartDate.getMonth() + 1 !== currentMonth && weeklyViewOffset <= 0;
-        const nextButtonDisabled = viewEndDate.getMonth() + 1 !== currentMonth && weeklyViewOffset >= 0;
+        // Generate array of date objects for the current month
+        const daysOfMonth = [];
+        for(let i = 1; i <= daysInMonth; i++) {
+            daysOfMonth.push(new Date(currentYear, currentMonth - 1, i));
+        }
 
         const monthOptions = [
           { val: 1, name: "January" },
@@ -1524,13 +1482,14 @@
           )
           .join("");
 
-        const yearOptions = [currentYear - 1, currentYear, currentYear + 1]
+        const yearOptions = [currentYear - 1, currentYear, currentYear, currentYear + 1]
           .map(
             (y) =>
               `<option value="${y}" ${
                 y === currentYear ? "selected" : ""
               }>${y}</option>`
           )
+          .filter((value, index, self) => self.indexOf(value) === index) // Unique years
           .join("");
           
         const gradeOptions = allGrades.map(g => 
@@ -1571,46 +1530,27 @@
                     </div>
                     <!-- END: Month/Year Selector and Quick Mark -->
 
-                    <!-- Weekly Navigation -->
-                    <div class="flex justify-between items-center px-4 md:px-0">
-                        <button id="prev-week-btn" class="p-2 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200 transition disabled:opacity-50" ${prevButtonDisabled ? 'disabled' : ''}>
-                            &larr; Prev Week
-                        </button>
-                        <span class="text-sm font-semibold text-gray-700">
-                            ${viewStartDate.getDate()} - ${viewEndDate.getDate()}, ${viewStartDate.toLocaleString('default', { month: 'short' })}
-                        </span>
-                        <button id="next-week-btn" class="p-2 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200 transition disabled:opacity-50" ${nextButtonDisabled ? 'disabled' : ''}>
-                            Next Week &rarr;
-                        </button>
-                    </div>
-
                     <!-- Monthly Attendance Calendar Table -->
                     <div class="overflow-x-auto rounded-lg shadow-lg border border-gray-200 bg-white">
-                        <table class="min-w-full text-sm text-left border-collapse">
+                        <table class="min-w-full text-sm text-left border-collapse table-fixed">
                             <thead class="bg-indigo-600 text-white sticky top-0 z-10" id="monthly-attendance-header">
                                 <tr>
                                     <!-- Sticky Columns -->
                                     <th scope="col" class="py-3 px-0 w-8 min-w-[32px] font-bold sticky-col-roll text-center">Roll</th>
-                                    <th scope="col" class="py-3 px-1 w-24 min-w-[96px] font-bold sticky-col-name">Name</th>
+                                    <th scope="col" class="py-3 px-1 w-24 min-w-[96px] max-w-[96px] font-bold sticky-col-name">Name</th>
                                     
-                                    <!-- Weekly Day Headers -->
-                                    ${(() => {
-                                        let headers = '';
-                                        const date = new Date(viewStartDate);
-                                        for (let i = 0; i < 7; i++) {
-                                            const dayIndex = date.getDay(); // 0=Sun, 6=Sat
-                                            const dayNames = ["S", "M", "T", "W", "T", "F", "S"]; // Sun to Sat
-                                            const dayName = dayNames[dayIndex];
-                                            const isHoliday = date.getDay() === 6; // Saturday is Holiday
-                                            
-                                            headers += `<th scope="col" class="calendar-header-cell ${isHoliday ? "holiday" : ""}">
-                                                            <div class="text-[0.6rem] font-normal">${dayName}</div>
-                                                            <div class="text-xs font-bold">${date.getDate()}</div>
-                                                        </th>`;
-                                            date.setDate(date.getDate() + 1);
-                                        }
-                                        return headers;
-                                    })()}
+                                    <!-- Monthly Day Headers -->
+                                    ${daysOfMonth.map(date => {
+                                        const dayIndex = date.getDay(); // 0=Sun, 6=Sat
+                                        const dayNames = ["S", "M", "T", "W", "T", "F", "S"]; // Sun to Sat
+                                        const dayName = dayNames[dayIndex];
+                                        const isHoliday = date.getDay() === 6; // Saturday is Holiday
+                                        
+                                        return `<th scope="col" class="calendar-header-cell ${isHoliday ? "holiday" : ""}">
+                                                        <div class="text-[0.6rem] font-normal">${dayName}</div>
+                                                        <div class="text-xs font-bold">${date.getDate()}</div>
+                                                    </th>`;
+                                    }).join('')}
                                 </tr>
                             </thead>
                             <tbody id="monthly-calendar-body" class="divide-y divide-gray-200">
@@ -1629,7 +1569,6 @@
           .getElementById("monthly-select-grade")
           .addEventListener("change", (e) => {
               attendanceFilterGrade = e.target.value;
-              weeklyViewOffset = 0; // Reset week view when changing grade/month
               renderMonthlyAttendance();
           });
           
@@ -1644,24 +1583,13 @@
           .getElementById("monthly-mark-btn")
           .addEventListener("click", window.handleMonthlyMark);
           
-        // NEW: Weekly Navigation Listeners
-        document.getElementById('prev-week-btn').addEventListener('click', () => {
-            weeklyViewOffset--;
-            renderMonthlyAttendance();
-        });
-        document.getElementById('next-week-btn').addEventListener('click', () => {
-            weeklyViewOffset++;
-            renderMonthlyAttendance();
-        });
-
-
         // Attach click listener to the table body for cell updates (delegation)
         document
           .getElementById("monthly-calendar-body")
           .addEventListener("click", window.handleAttendanceCellClick);
 
         // Initial render of the calendar body
-        renderMonthlyCalendarBody(viewStartDate, studentsForAttendance);
+        renderMonthlyCalendarBody(daysOfMonth, studentsForAttendance);
       }
       
       // Helper to handle month/year dropdown changes
@@ -1673,7 +1601,6 @@
           document.getElementById("monthly-select-year").value
         );
         monthlyViewDate = new Date(year, month - 1); // Month is 0-indexed in JS Date object
-        weeklyViewOffset = 0; // Reset to the week containing the 1st of the month
         renderMonthlyAttendance(); // Re-render the entire view
       }
 
@@ -1704,7 +1631,8 @@
       // Helper to handle attendance cell clicks (toggle status)
       window.handleAttendanceCellClick = function(event) { // MADE GLOBAL
         const cell = event.target.closest(".attendance-mark");
-        if (!cell || cell.classList.contains("holiday")) return; // check for .holiday class
+        // The cell check needs to ensure it's not a holiday/unclickable cell
+        if (!cell || cell.classList.contains("holiday") || cell.dataset.status === '-') return; 
 
         const studentId = cell.dataset.studentId;
         const date = cell.dataset.date;
@@ -1719,13 +1647,16 @@
             newStatus = "Late";
             break;
           case "L":
-            newStatus = "PH";
-            break; // Public Holiday
+            newStatus = "PH"; // **FIXED: Cycle from Late to Public Holiday**
+            break; 
           case "PH":
-            newStatus = "Unmarked";
-            break; // Unmarked
+            newStatus = "Unmarked"; // **FIXED: Cycle from Public Holiday to Unmarked**
+            break; 
+          case "U":
+            newStatus = "Present";
+            break; 
           default:
-            newStatus = "Present"; // If 'U' (Unmarked)
+            newStatus = "Present"; // Fallback
         }
 
         // Update Firestore
@@ -1733,8 +1664,8 @@
         // UI update happens automatically via the global onSnapshot listener for allAttendanceRecords
       }
 
-      // Primary function to populate the weekly calendar table
-      function renderMonthlyCalendarBody(viewStartDate, studentsForAttendance) {
+      // Primary function to populate the monthly calendar table
+      function renderMonthlyCalendarBody(daysOfMonth, studentsForAttendance) {
         const listBody = document.getElementById("monthly-calendar-body");
         const noStudentsMessage = document.getElementById(
           "no-students-message"
@@ -1749,7 +1680,7 @@
         }
         noStudentsMessage.classList.add("hidden");
 
-        const datePrefix = monthlyViewDate.toISOString().slice(0, 7);
+        const datePrefix = formatDateLocal(monthlyViewDate).slice(0, 7); // **FIXED: Use local formatter**
 
         // 1. Create a quick lookup map for attendance records in the current month
         const attendanceMap = allAttendanceRecords.reduce((acc, record) => {
@@ -1757,6 +1688,7 @@
             if (!acc[record.studentId]) {
               acc[record.studentId] = {};
             }
+            // Uses slice(8, 10) on the stored date string (YYYY-MM-DD) to get the day
             acc[record.studentId][record.date.slice(8, 10)] =
               record.status.charAt(0); // 'P', 'A', 'L', 'PH'
           }
@@ -1769,42 +1701,48 @@
           row.classList.add("hover:bg-gray-50", "transition", "duration-150");
 
           let cellsHtml = `
-                    <td class="py-3 px-0 font-medium text-gray-900 sticky-col-roll text-center">${student.rollNo}</td>
-                    <td class="py-3 px-1 text-gray-700 sticky-col-name">${student.name}</td>
+                    <td class="py-3 px-0 w-8 min-w-[32px] font-medium text-gray-900 sticky-col-roll text-center">${student.rollNo}</td>
+                    <td class="py-3 px-1 w-24 min-w-[96px] text-gray-700 sticky-col-name">${student.name}</td>
                 `;
           
-          const date = new Date(viewStartDate);
-
-          for (let i = 0; i < 7; i++) {
-            const currentMonth = monthlyViewDate.getMonth();
-            const cellMonth = date.getMonth();
-            const dateStr = date.toISOString().slice(0, 10);
+          daysOfMonth.forEach(date => {
+            const dateStr = formatDateLocal(date); // **FIXED: Use local formatter for data-date**
             const dayKey = String(date.getDate()).padStart(2, "0");
-            const isHoliday = date.getDay() === 6; // Saturday is Holiday
+            const isSaturday = date.getDay() === 6; // Saturday (Day 6) is Holiday
             
-            // Only show marks for the selected month, otherwise show a grayed out date or '--'
-            let status = (cellMonth === currentMonth) ? (attendanceMap[student.id]?.[dayKey] || "U") : (isHoliday ? "-" : "U"); 
-            let statusChar = isHoliday ? "-" : status;
-            let statusClass = getStatusClasses(status);
+            // Check if there is an existing record for the current date
+            const existingStatus = attendanceMap[student.id]?.[dayKey];
             
-            // If the date is outside the currently selected month, make it visually disabled
-            const isOutsideMonth = cellMonth !== currentMonth;
+            let statusCharHtml, status, statusClass;
+
+            if (isSaturday) {
+                // Saturday is a forced non-clickable holiday
+                status = 'PH'; 
+                statusCharHtml = getStatusContent(status);
+                statusClass = getStatusClasses(status);
+            } else {
+                // Regular school day
+                status = existingStatus || "U";
+                statusCharHtml = getStatusContent(status);
+                statusClass = getStatusClasses(status);
+            }
+            
+            // If it's a Saturday, apply the holiday class and prevent interaction
+            const cellClasses = `calendar-cell attendance-mark border border-gray-100 flex items-center justify-center ${statusClass} ${isSaturday ? "holiday pointer-events-none" : ""}`;
 
             cellsHtml += `
-                        <td class="calendar-cell attendance-mark border border-gray-100 ${statusClass} ${
-              isHoliday ? "holiday" : ""
-            } ${isOutsideMonth ? "opacity-50 pointer-events-none" : ""}" 
-                            data-student-id="${student.id}" 
-                            data-date="${dateStr}" 
-                            data-status="${status}"
-                            title="${dateStr} - ${student.name} - ${
-              status === "U" ? "Unmarked" : status
-            }">
-                            ${statusChar}
+                        <td class="p-0">
+                            <div class="${cellClasses}" 
+                                data-student-id="${student.id}" 
+                                data-date="${dateStr}" 
+                                data-status="${status}"
+                                title="${dateStr} - ${student.name} - ${status === 'U' ? 'Unmarked' : status}">
+                                ${statusCharHtml}
+                            </div>
                         </td>
                     `;
-            date.setDate(date.getDate() + 1); // Move to the next day
-          }
+          });
+
 
           row.innerHTML = cellsHtml;
           listBody.appendChild(row);
@@ -1812,7 +1750,7 @@
       }
 
 
-      // --- NEW: Helper function to render the Attendance Report Content ---
+      // --- Helper function to render the Attendance Report Content ---
       function renderAttendanceReportContent(stats) {
           const studentRows = students
           .map((s) => {
@@ -1822,7 +1760,7 @@
             const presentThisMonth = sStats?.presentThisMonth || 0;
             const presentTillLastMonth = sStats?.presentTillLastMonth || 0;
             const totalPresent = presentThisMonth + presentTillLastMonth; // Sum of the two required columns
-            const percentage = sStats?.percentage || 0;
+            const percentage = sStats?.overallAttendancePercent || 0; // Use the newly calculated overall percentage
 
             return `
                     <tr class="hover:bg-gray-50">
@@ -1851,32 +1789,25 @@
             <div class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-indigo-500">
-                        <p class="text-sm font-medium text-gray-500">Present Month Attendance Rate</p>
+                        <p class="text-sm font-medium text-gray-500">Overall Attendance Rate</p>
                         <p class="text-3xl font-bold text-gray-900 mt-1">${stats.globalPercentage.toFixed(
                           1
                         )}%</p>
-                        <p class="text-xs text-gray-400">(${new Date().toLocaleString(
-                          "default",
-                          { month: "long", year: "numeric" }
-                        )})</p>
+                        <p class="text-xs text-gray-400">(All time attendance)</p>
                     </div>
                     <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
                         <p class="text-sm font-medium text-gray-500">Total Present (P + L)</p>
                         <p class="text-3xl font-bold text-gray-900 mt-1">${
                           stats.totalPresent + stats.totalLate
                         }</p>
-                        <p class="text-xs text-gray-400">All recorded time.</p>
+                        <p class="text-xs text-gray-400">Total present and late marks.</p>
                     </div>
                     <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
-                        <p class="text-sm font-medium text-gray-500">Overall Attendance Rate</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">${stats.globalPercentage.toFixed(
-                          1
-                        )}%</p>
-                        <p class="text-xs text-gray-400">(${
-                          stats.totalPresent + stats.totalLate
-                        } / ${
-          stats.totalPresent + stats.totalAbsent + stats.totalLate
-        } expected records)</p>
+                        <p class="text-sm font-medium text-gray-500">Total Absent (A)</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">${
+                          stats.totalAbsent
+                        }</p>
+                        <p class="text-xs text-gray-400">Total absent marks.</p>
                     </div>
                 </div>
 
@@ -1907,7 +1838,7 @@
           `;
       }
       
-      // --- NEW: Function to render the Exam Report Content ---
+      // --- Function to render the Exam Report Content ---
       function renderExamReportContent() {
           // New state to filter reports
           let reportGradeFilter = viewContainer.dataset.reportGradeFilter || 'All'; 
@@ -1950,7 +1881,7 @@
                       <tr class="bg-white hover:bg-gray-50 border-y border-gray-200">
                           <td class="py-3 px-4 font-medium text-gray-900">${batch.subject}</td>
                           <td 
-                              class="py-3 px-4 text-gray-700 exam-batch-link" 
+                              class="py-3 px-4 text-gray-700 exam-batch-link cursor-pointer hover:text-indigo-600 font-semibold" 
                               data-batch-id="${batch.examBatchId}"
                               onclick="openExamDetailsModal('${batch.examBatchId}')"
                           >
@@ -2028,13 +1959,13 @@
                     <div class="flex space-x-4"> <!-- Changed to flex space-x-4 for pill style -->
                         <button 
                             data-tab="attendance" 
-                            class="report-tab-btn report-tab-btn-style ${currentReportTab === 'attendance' ? 'active' : 'bg-gray-200 text-gray-700'}"
+                            class="report-tab-btn px-4 py-2 font-semibold rounded-lg transition duration-150 ${currentReportTab === 'attendance' ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
                         >
                             Attendance Records
                         </button>
                         <button 
                             data-tab="results" 
-                            class="report-tab-btn report-tab-btn-style ${currentReportTab === 'results' ? 'active' : 'bg-gray-200 text-gray-700'}"
+                            class="report-tab-btn px-4 py-2 font-semibold rounded-lg transition duration-150 ${currentReportTab === 'results' ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
                         >
                             Exam Results
                         </button>
@@ -2071,7 +2002,8 @@
       // Function to handle grade selection in the exam input view
       window.handleExamGradeSelection = function(grade) {
           selectedExamGrade = grade;
-          renderExamResults();
+          // FIX: Force full re-render after grade selection to fetch the filtered student list
+          renderView('exams'); 
       }
 
       function renderExamResults() {
@@ -2088,12 +2020,18 @@
         const today = new Date().toISOString().slice(0, 10);
         
         // --- GRADE SELECTION OPTIONS ---
-        const gradeOptions = ['Select Grade', ...allGrades].map(g => 
-            `<option value="${g}" ${g === selectedExamGrade ? 'selected' : ''} ${g === 'Select Grade' ? 'disabled' : ''}>${g === 'Select Grade' ? g : 'Grade ' + g}</option>`
-        ).join('');
+        // CHANGED: The first option is now explicitly 'Select Grade' and disabled
+        const gradeOptions = [
+            `<option value="" ${selectedExamGrade === '' ? 'selected' : ''} disabled>Select Grade</option>`,
+             ...allGrades.map(g => 
+                `<option value="${g}" ${g === selectedExamGrade ? 'selected' : ''}>Grade ${g}</option>`
+             )
+        ].join('');
+
         
         // --- Step 1: Grade Selection UI ---
-        if (!selectedExamGrade || selectedExamGrade === 'Select Grade') {
+        // The check now ensures that if selectedExamGrade is an empty string (the value of 'Select Grade'), it shows the prompt.
+        if (!selectedExamGrade) {
              viewContainer.innerHTML = `
                 <div class="max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg text-center space-y-4">
                     <h3 class="text-xl font-semibold text-indigo-700">Select Grade for Scoring</h3>
@@ -2113,6 +2051,22 @@
         // This relies on the FIXED getStudentsByGrade function
         const studentsForScoring = getStudentsByGrade(selectedExamGrade);
         
+        // If the selected grade is valid but yields no students, show a message
+        if (studentsForScoring.length === 0) {
+             viewContainer.innerHTML = `
+                <div class="max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg text-center space-y-4">
+                    <h4 class="text-lg font-bold text-indigo-800">Entering Scores for: Grade ${selectedExamGrade}</h4>
+                    <p class="text-gray-600">No students found for **Grade ${selectedExamGrade}**.</p>
+                    <p class="text-sm text-gray-500">Please check your student list in the **Student Management** section, or click 'Change Grade' below.</p>
+                    <button onclick="handleExamGradeSelection('')" class="mt-4 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
+                        Change Grade
+                    </button>
+                </div>
+             `;
+             return;
+        }
+
+
         const studentScoreRows = studentsForScoring.map(s => `
             <tr class="hover:bg-gray-50">
                 <td class="py-3 px-4 text-gray-900">${s.rollNo}</td>
@@ -2234,8 +2188,6 @@
             saveExamResults(subject, type, maxMarks, date, scores);
         });
       }
-      
-      // --- MODAL FUNCTIONS ---
       
       // Function to close any modal
       window.closeModal = function(modalId) {
