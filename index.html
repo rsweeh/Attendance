@@ -193,6 +193,12 @@
       .student-value {
           font-weight: 600;
       }
+      /* Style for disabled buttons/inputs in View Only Mode */
+      .view-only-disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          filter: grayscale(100%);
+      }
     </style>
   </head>
   <body class="bg-gray-100 antialiased">
@@ -318,10 +324,14 @@
             </nav>
           </div>
         </div>
-        <!-- User Info (Auth Status) - Desktop Only -->
+        <!-- User Info (Auth Status & Editor Toggle) - Desktop Only -->
         <div class="p-4 border-t border-indigo-700 w-full">
-          <p id="user-status" class="text-sm">Status: Initializing...</p>
-          <p id="user-id-display" class="text-xs break-all mt-1 opacity-70"></p>
+            <div class="mb-3">
+                <p id="editor-status-display-desktop" class="text-sm font-semibold mb-1"></p>
+                <button id="toggle-editor-btn-desktop" class="px-3 py-1 text-xs font-semibold rounded-lg w-full transition duration-150"></button>
+            </div>
+            <p id="user-status" class="text-sm">Status: Initializing...</p>
+            <p id="user-id-display" class="text-xs break-all mt-1 opacity-70"></p>
         </div>
       </div>
 
@@ -368,6 +378,8 @@
             <div class="mobile-nav-item" id="mobile-status-container">
                 <p class="text-[0.6rem] text-gray-400">Status:</p>
                 <p id="mobile-user-status" class="text-[0.6rem] font-semibold text-gray-500">...</p>
+                <p id="editor-status-display-mobile" class="text-[0.6rem] font-semibold mt-1"></p>
+                <button id="toggle-editor-btn-mobile" class="px-2 py-0.5 text-[0.5rem] font-semibold rounded-lg transition duration-150"></button>
             </div>
       </div>
     </div>
@@ -417,7 +429,7 @@
                     <button type="button" onclick="closeModal('edit-student-modal')" class="px-4 py-2 bg-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-400 transition">
                         Cancel
                     </button>
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
+                    <button type="submit" id="save-edit-btn" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
                         Save Changes
                     </button>
                 </div>
@@ -484,6 +496,13 @@
       let userId = null;
       let monthlyViewDate = new Date(); // Tracks the currently viewed month/year
       let weeklyViewOffset = 0; // Tracks the current week offset (0 = current week)
+      // --- NEW: Editor Mode State (Stored in localStorage) ---
+      let isEditorMode = false;
+      // --- NEW: Error Logging Flags ---
+      let studentsErrorLogged = false;
+      let attendanceErrorLogged = false;
+      let examsErrorLogged = false;
+
 
       // --- GRADE MANAGEMENT STATE ---
       let allGrades = []; // Array of unique grades (e.g., ['9', '10A', '7B'])
@@ -498,22 +517,65 @@
       const userIdDisplayEl = document.getElementById("user-id-display"); // Desktop User ID
       const mobileUserStatusEl = document.getElementById("mobile-user-status"); // Mobile status
       const examDetailsModal = document.getElementById('exam-details-modal');
-      const editStudentModal = document.getElementById('edit-student-modal'); // **NEW**
+      const editStudentModal = document.getElementById('edit-student-modal'); 
 
 
-      // --- FIREBASE INITIALIZATION ---
+      // --- INITIALIZATION & AUTH ---
+
+      function initializeEditorMode() {
+        // Use localStorage to persist editor mode state
+        const storedMode = localStorage.getItem('isEditorMode');
+        isEditorMode = storedMode === 'true'; // Default is false if null/undefined
+        updateEditorModeUI();
+      }
+
+      function toggleEditorMode() {
+        isEditorMode = !isEditorMode;
+        localStorage.setItem('isEditorMode', isEditorMode ? 'true' : 'false');
+        updateEditorModeUI();
+        // Re-render the current view to apply conditional rendering based on mode
+        renderView(currentView); 
+      }
+      
+      function updateEditorModeUI() {
+        const desktopStatusEl = document.getElementById('editor-status-display-desktop');
+        const mobileStatusEl = document.getElementById('editor-status-display-mobile');
+        const desktopBtn = document.getElementById('toggle-editor-btn-desktop');
+        const mobileBtn = document.getElementById('toggle-editor-btn-mobile');
+
+        if (isEditorMode) {
+            desktopStatusEl.textContent = "Mode: Editor (Read/Write)";
+            desktopStatusEl.className = "text-sm font-semibold text-green-300 mb-1";
+            desktopBtn.textContent = "Switch to View Only";
+            desktopBtn.className = "bg-green-600 text-white hover:bg-green-700 px-3 py-1 text-xs font-semibold rounded-lg w-full transition duration-150";
+
+            mobileStatusEl.textContent = "Editor Mode";
+            mobileStatusEl.className = "text-[0.6rem] font-semibold text-green-600 mt-1";
+            mobileBtn.textContent = "Switch to View";
+            mobileBtn.className = "bg-green-500 text-white hover:bg-green-600 px-2 py-0.5 text-[0.5rem] font-semibold rounded-lg transition duration-150";
+
+        } else {
+            desktopStatusEl.textContent = "Mode: Viewer (Read Only)";
+            desktopStatusEl.className = "text-sm font-semibold text-yellow-300 mb-1";
+            desktopBtn.textContent = "Switch to Editor Mode";
+            desktopBtn.className = "bg-yellow-600 text-white hover:bg-yellow-700 px-3 py-1 text-xs font-semibold rounded-lg w-full transition duration-150";
+            
+            mobileStatusEl.textContent = "Viewer Mode";
+            mobileStatusEl.className = "text-[0.6rem] font-semibold text-yellow-600 mt-1";
+            mobileBtn.textContent = "Switch to Edit";
+            mobileBtn.className = "bg-yellow-500 text-white hover:bg-yellow-600 px-2 py-0.5 text-[0.5rem] font-semibold rounded-lg transition duration-150";
+        }
+      }
 
       function initializeFirebase() {
         if (!firebaseConfig) {
           console.error("Firebase configuration is missing.");
           userStatusEl.textContent = "Error: Config Missing.";
           mobileUserStatusEl.textContent = "Error!";
-          // Render the view, which will now use the safer approach for missing config
           renderView("dashboard");
           return;
         }
         
-        // Ensure the config is not an empty object that failed parsing earlier
         if (Object.keys(firebaseConfig).length === 0) {
             console.error("Firebase configuration is empty or malformed.");
             userStatusEl.textContent = "Error: Config Empty.";
@@ -522,6 +584,7 @@
             return;
         }
 
+        initializeEditorMode(); // Initialize Editor Mode State
 
         console.log("[DIAGNOSTIC] Attempting Firebase Initialization...");
         // Initialize Firebase
@@ -544,7 +607,6 @@
                 console.error("Initial Firebase Auth Error:", error);
                 userStatusEl.textContent = "Status: Auth Failed!";
                 mobileUserStatusEl.textContent = "Auth Failed!";
-                // Even if auth fails, we proceed to set up the onAuthStateChanged listener
             }
 
             // Set up Authentication Listener - This is the standard way to proceed
@@ -558,18 +620,20 @@
                 // Once authenticated, start listening for data
                 setupDataListeners();
               } else {
-                // Should only happen if sign-out occurs, but handle case where initial sign-in fails entirely
                 userId = null;
                 userStatusEl.textContent = "Status: Disconnected";
                 mobileUserStatusEl.textContent = "Disconnected";
                 userIdDisplayEl.textContent = `User ID: N/A`;
-                // Attempt to retry auth if needed, but for now, just log and wait.
               }
             });
         }
         
         authenticateAndListen();
         renderView("dashboard");
+        
+        // Attach toggle listeners globally after the buttons are rendered
+        document.getElementById('toggle-editor-btn-desktop').addEventListener('click', toggleEditorMode);
+        document.getElementById('toggle-editor-btn-mobile').addEventListener('click', toggleEditorMode);
       }
 
       // --- FIREBASE PATHS & FUNCTIONS ---
@@ -595,10 +659,11 @@
           "exam_results"
         );
 
-
-      // NOTE: Removed redundant handleAuth function as its logic is now integrated into initializeFirebase
-
       async function addStudent(name, rollNo, grade) {
+        if (!isEditorMode) {
+          showMessage("Access denied: Switch to Editor Mode to add students.", "red");
+          return;
+        }
         if (!userId || !db) {
           console.error("User not authenticated or Database not ready.");
           showMessage("Error: Database not ready.", "red");
@@ -623,6 +688,10 @@
       
       // **NEW: Update Student Function**
       window.updateStudentDetails = async function(id, name, rollNo, grade) {
+        if (!isEditorMode) {
+          showEditMessage("Access denied: Switch to Editor Mode to save changes.", "red");
+          return;
+        }
         if (!userId || !db) {
           showMessage("Error: Database not ready.", "red");
           return;
@@ -646,6 +715,10 @@
       }
 
       async function deleteStudent(id) {
+        if (!isEditorMode) {
+          showMessage("Access denied: Switch to Editor Mode to delete students.", "red");
+          return;
+        }
         if (!userId || !db) {
           console.error("User not authenticated or Database not ready.");
           showMessage("Error: Database not ready.", "red");
@@ -662,6 +735,10 @@
 
       // Function to set or update a single attendance record
       async function setAttendanceRecord(studentId, date, status) {
+        if (!isEditorMode) {
+          showMessage("Access denied: Switch to Editor Mode to mark attendance.", "red");
+          return;
+        }
         if (!userId || !db) return;
         const docId = `${studentId}_${date}`;
         const attendanceRef = doc(getAttendanceCollectionRef(), docId);
@@ -685,6 +762,10 @@
       }
 
       async function markMonthPresent(year, month) {
+        if (!isEditorMode) {
+          showMessage("Access denied: Switch to Editor Mode to bulk mark attendance.", "red");
+          return;
+        }
         // Filter students based on current attendance filter grade
         const studentsToMark = getStudentsByGrade(attendanceFilterGrade);
 
@@ -754,6 +835,10 @@
       }
 
       async function saveExamResults(subject, type, maxMarks, date, scores) {
+        if (!isEditorMode) {
+          showMessage("Access denied: Switch to Editor Mode to save exam results.", "red");
+          return;
+        }
         if (!userId || !db) {
           showMessage("Error: Database not ready.", "red");
           return;
@@ -816,6 +901,10 @@
       
       // --- FIX: Updated Function to delete an entire Exam Batch ---
       window.deleteExamBatch = async function(batchId, subject, type) {
+          if (!isEditorMode) {
+              showMessage("Access denied: Switch to Editor Mode to delete exam batches.", "red");
+              return;
+          }
           console.log(`[DELETE] Attempting to delete batch ID: ${batchId}`);
           
           if (!userId || !db) {
@@ -824,6 +913,7 @@
               return;
           }
           
+          // Using window.confirm() here as it's outside the main document body/form flow
           if (confirm(`Are you sure you want to permanently delete ALL results for the exam: ${subject} - ${type}? This action cannot be undone.`)) {
               
               const recordsToDelete = allExamRecords.filter(r => r.examBatchId === batchId);
@@ -882,13 +972,17 @@
             if (!allGrades.includes(attendanceFilterGrade)) {
                 attendanceFilterGrade = allGrades[0] || '';
             }
-
+            studentsErrorLogged = false; // Reset flag on successful data fetch
 
             // Re-render the current view to reflect new student list/stats
             renderView(currentView);
           },
           (error) => {
-            console.error("Error fetching students:", error);
+            // Log only once per session or until successful fetch
+            if (!studentsErrorLogged) {
+                console.error("Error fetching students:", error);
+                studentsErrorLogged = true;
+            }
             // On permission error, set visual status in UI
             userStatusEl.textContent = "Status: Permission Denied!";
             mobileUserStatusEl.textContent = "Denied!";
@@ -906,6 +1000,7 @@
             snapshot.forEach((doc) => {
               allAttendanceRecords.push({ id: doc.id, ...doc.data() });
             });
+            attendanceErrorLogged = false; // Reset flag on successful data fetch
 
             // Re-render reports/dashboard immediately when attendance changes
             if (
@@ -917,7 +1012,10 @@
             }
           },
           (error) => {
-            console.error("Error fetching all attendance records:", error);
+            if (!attendanceErrorLogged) {
+                console.error("Error fetching all attendance records:", error);
+                attendanceErrorLogged = true;
+            }
             // On permission error, set visual status in UI
             userStatusEl.textContent = "Status: Permission Denied!";
             mobileUserStatusEl.textContent = "Denied!";
@@ -934,13 +1032,17 @@
             snapshot.forEach((doc) => {
               allExamRecords.push({ id: doc.id, ...doc.data() });
             });
+            examsErrorLogged = false; // Reset flag on successful data fetch
 
             if (currentView === "reports" || currentView === "students" || currentView === "exams" || currentView === "dashboard") { 
               renderView(currentView); 
             }
           },
           (error) => {
-            console.error("Error fetching exam records:", error);
+            if (!examsErrorLogged) {
+                console.error("Error fetching exam records:", error);
+                examsErrorLogged = true;
+            }
             // On permission error, set visual status in UI
             userStatusEl.textContent = "Status: Permission Denied!";
             mobileUserStatusEl.textContent = "Denied!";
@@ -1218,6 +1320,7 @@
       function renderView(viewName) {
         currentView = viewName;
         setActiveNav(viewName);
+        updateEditorModeUI(); // Ensure buttons reflect current mode
 
         // Update Title
         const menuItem = document.querySelector(`.menu-item[data-view="${viewName}"]`);
@@ -1373,92 +1476,139 @@
       }
 
       function renderStudentManagement() {
+        let listContentHtml;
+        const statusEl = document.getElementById("user-status");
+        
+        // Apply disabled class to the Add Student Form if in View Only Mode
+        const formDisabledClass = isEditorMode ? '' : 'view-only-disabled';
+        
+        // --- CHECK 1: If data fetching failed entirely, show explicit error message ---
+        if (students.length === 0 && statusEl.textContent.includes("Permission Denied")) {
+             listContentHtml = `
+                <div class="bg-red-50 p-6 rounded-xl border border-red-300 shadow-md">
+                    <h3 class="text-xl font-semibold mb-2 text-red-700">Data Access Restricted</h3>
+                    <p class="text-gray-700">The application is currently unable to fetch student data due to **Missing or insufficient permissions** in your Firebase security rules.</p>
+                    <p class="text-sm mt-2 text-red-500">Please verify that your Firestore rules allow reads from the public collections: <code>/artifacts/{projectId}/public/data/students</code>.</p>
+                </div>
+             `;
+        } else {
+             // --- CHECK 2: If we have students, render the table ---
+             listContentHtml = `
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Current Students List</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm text-left divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Roll No.</th>
+                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Name</th>
+                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Grade</th>
+                                    <th class="py-3 px-4 sm:px-6 font-bold text-gray-600 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-list-mgmt" class="divide-y divide-gray-200">
+                                <!-- Student rows here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+             `;
+        }
+        
+        // --- Full View Render ---
         viewContainer.innerHTML = `
                 <div class="max-w-3xl mx-auto space-y-6">
                     
                     <!-- Add Student Form -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="bg-white p-6 rounded-xl shadow-lg ${formDisabledClass}">
                         <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Add New Student</h3>
                         <form id="add-student-form" class="space-y-4">
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <label for="student-name" class="block text-sm font-medium text-gray-700">Student Name</label>
-                                    <input type="text" id="student-name" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                    <input type="text" id="student-name" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" ${isEditorMode ? '' : 'disabled'}>
                                 </div>
                                 <div>
                                     <label for="student-rollno" class="block text-sm font-medium text-gray-700">Roll No. (ID)</label>
-                                    <input type="number" id="student-rollno" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                    <input type="number" id="student-rollno" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" ${isEditorMode ? '' : 'disabled'}>
                                 </div>
                                 <div>
                                     <label for="student-grade" class="block text-sm font-medium text-gray-700">Grade Level</label>
-                                    <input type="text" id="student-grade" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., 9, 10A, 7B">
+                                    <input type="text" id="student-grade" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., 9, 10A, 7B" ${isEditorMode ? '' : 'disabled'}>
                                 </div>
                             </div>
-                            <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-150">
+                            <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-150 ${isEditorMode ? '' : 'view-only-disabled'}" ${isEditorMode ? '' : 'disabled'}>
                                 Add Student
                             </button>
                         </form>
                     </div>
 
-                    <!-- Student List Table -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Current Students List</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm text-left divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Roll No.</th>
-                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Name</th>
-                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600">Grade</th>
-                                        <th class="py-3 px-4 sm:px-6 font-bold text-gray-600 text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="student-list-mgmt" class="divide-y divide-gray-200">
-                                    <!-- Student rows here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <!-- Student List or Permission Error Message -->
+                    ${listContentHtml}
+
                     <p id="message" class="text-sm font-semibold h-5"></p>
                 </div>
             `;
 
-        updateStudentListMgmt();
+        // Only try to update the list and attach listeners if the table element exists
+        if (students.length > 0) {
+            updateStudentListMgmt();
 
-        document
-          .getElementById("add-student-form")
-          .addEventListener("submit", (e) => {
-            e.preventDefault();
-            const name = document.getElementById("student-name").value.trim();
-            const rollNo = parseInt(
-              document.getElementById("student-rollno").value
-            );
-            const grade = document.getElementById("student-grade").value.trim();
-            if (name && rollNo && grade) {
-              addStudent(name, rollNo, grade);
-              e.target.reset(); // Clear form
-              document.getElementById("student-name").focus(); // Focus back to name field
-            }
-          });
-
-        document
-          .getElementById("student-list-mgmt")
-          .addEventListener("click", (e) => {
-            if (e.target.closest(".delete-btn")) {
-              const studentId = e.target.closest(".delete-btn").dataset.id;
-              if (confirm("Are you sure you want to delete this student permanently?")) {
-                  deleteStudent(studentId);
-              }
-            }
-            // Handle Edit Button Click
-            if (e.target.closest(".edit-btn")) {
-                const studentId = e.target.closest(".edit-btn").dataset.id;
-                const studentData = students.find(s => s.id === studentId);
-                if (studentData) {
-                    openEditStudentModal(studentData);
+            document
+              .getElementById("add-student-form")
+              .addEventListener("submit", (e) => {
+                e.preventDefault();
+                const name = document.getElementById("student-name").value.trim();
+                const rollNo = parseInt(
+                  document.getElementById("student-rollno").value
+                );
+                const grade = document.getElementById("student-grade").value.trim();
+                if (name && rollNo && grade) {
+                  addStudent(name, rollNo, grade);
+                  e.target.reset(); // Clear form
+                  document.getElementById("student-name").focus(); // Focus back to name field
                 }
-            }
-          });
+              });
+              
+            // Handle table action clicks (delegated listener)
+            document
+              .getElementById("student-list-mgmt")
+              .addEventListener("click", (e) => {
+                if (e.target.closest(".delete-btn")) {
+                  const studentId = e.target.closest(".delete-btn").dataset.id;
+                  if (isEditorMode && confirm("Are you sure you want to delete this student permanently?")) {
+                      deleteStudent(studentId);
+                  } else if (!isEditorMode) {
+                      showMessage("Access denied: Switch to Editor Mode to delete students.", "red");
+                  }
+                }
+                // Handle Edit Button Click
+                if (e.target.closest(".edit-btn")) {
+                    const studentId = e.target.closest(".edit-btn").dataset.id;
+                    const studentData = students.find(s => s.id === studentId);
+                    if (studentData) {
+                        openEditStudentModal(studentData);
+                    }
+                }
+              });
+        } else {
+             // Still need to attach the listener for the add form, even if the list is empty/denied
+             document
+              .getElementById("add-student-form")
+              .addEventListener("submit", (e) => {
+                e.preventDefault();
+                const name = document.getElementById("student-name").value.trim();
+                const rollNo = parseInt(
+                  document.getElementById("student-rollno").value
+                );
+                const grade = document.getElementById("student-grade").value.trim();
+                if (name && rollNo && grade) {
+                  addStudent(name, rollNo, grade);
+                  e.target.reset(); // Clear form
+                  document.getElementById("student-name").focus(); // Focus back to name field
+                }
+              });
+        }
       }
 
       function updateStudentListMgmt() {
@@ -1467,6 +1617,10 @@
 
         listBody.innerHTML = "";
         
+        const deleteButtonClass = isEditorMode ? 'bg-red-500 hover:bg-red-600' : 'view-only-disabled bg-gray-400';
+        const editButtonClass = isEditorMode ? 'bg-blue-500 hover:bg-blue-600' : 'view-only-disabled bg-gray-400';
+
+
         // Group students by Grade
         const studentsByGrade = students.reduce((acc, student) => {
             // Use the normalized grade for grouping
@@ -1497,8 +1651,8 @@
                             <td class="py-3 px-4 sm:px-6 text-gray-700">${student.name}</td>
                             <td class="py-3 px-4 sm:px-6 text-gray-700">${student.grade || 'N/A'}</td>
                             <td class="py-3 px-4 sm:px-6 text-center space-x-2">
-                                <button class="edit-btn px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-150 text-xs" data-id="${student.id}">Edit</button>
-                                <button class="delete-btn px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-150 text-xs" data-id="${student.id}">Delete</button>
+                                <button class="edit-btn px-3 py-1 ${editButtonClass} text-white rounded-md transition duration-150 text-xs" data-id="${student.id}" ${isEditorMode ? '' : 'disabled'}>Edit</button>
+                                <button class="delete-btn px-3 py-1 ${deleteButtonClass} text-white rounded-md transition duration-150 text-xs" data-id="${student.id}" ${isEditorMode ? '' : 'disabled'}>Delete</button>
                             </td>
                         `;
                 listBody.appendChild(row);
@@ -1512,7 +1666,23 @@
           document.getElementById("edit-student-name").value = student.name;
           document.getElementById("edit-student-rollno").value = student.rollNo;
           document.getElementById("edit-student-grade").value = student.grade;
-          showEditMessage("", "green"); // Clear previous messages
+          
+          // Apply disabled state to modal elements
+          const inputs = editStudentModal.querySelectorAll('input');
+          const saveBtn = document.getElementById('save-edit-btn');
+          
+          if (!isEditorMode) {
+            inputs.forEach(input => input.disabled = true);
+            saveBtn.disabled = true;
+            saveBtn.classList.add('view-only-disabled');
+            showEditMessage("View Only Mode: Switch to Editor Mode to save changes.", "red");
+          } else {
+            inputs.forEach(input => input.disabled = false);
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('view-only-disabled');
+            showEditMessage("", "green"); // Clear message
+          }
+
           editStudentModal.classList.remove('hidden');
       }
 
@@ -1569,6 +1739,9 @@
         const gradeOptions = allGrades.map(g => 
              `<option value="${g}" ${g === attendanceFilterGrade ? 'selected' : ''}>Grade ${g}</option>`
         ).join('');
+        
+        const quickMarkDisabledClass = isEditorMode ? '' : 'view-only-disabled';
+        const quickMarkDisabledAttr = isEditorMode ? '' : 'disabled';
 
 
         viewContainer.innerHTML = `
@@ -1580,25 +1753,26 @@
                         <div class="flex flex-wrap items-center justify-between gap-4 mb-3">
                             <h3 class="text-xl font-semibold text-indigo-700">Attendance Calendar</h3>
                             <div class="flex flex-wrap gap-2 items-center">
-                                <select id="monthly-select-grade" class="p-2 border border-gray-300 rounded-lg shadow-sm w-32">
+                                <select id="monthly-select-grade" class="p-2 border border-gray-300 rounded-lg shadow-sm w-32" ${isEditorMode ? '' : 'disabled'}>
                                     ${gradeOptions}
                                 </select>
-                                <select id="monthly-select-month" class="p-2 border border-gray-300 rounded-lg shadow-sm w-32">
+                                <select id="monthly-select-month" class="p-2 border border-gray-300 rounded-lg shadow-sm w-32" ${isEditorMode ? '' : 'disabled'}>
                                     ${monthOptions}
                                 </select>
-                                <select id="monthly-select-year" class="p-2 border border-gray-300 rounded-lg shadow-sm w-24">
+                                <select id="monthly-select-year" class="p-2 border border-gray-300 rounded-lg shadow-sm w-24" ${isEditorMode ? '' : 'disabled'}>
                                     ${yearOptions}
                                 </select>
                             </div>
                         </div>
 
-                        <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-200 mt-4">
+                        <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-200 mt-4 ${quickMarkDisabledClass}">
                             <h4 class="text-md font-semibold text-indigo-700 mb-2">Monthly Quick Mark (Current View: Grade ${attendanceFilterGrade})</h4>
                             <div class="flex flex-wrap gap-3 items-center">
-                                <button id="monthly-mark-btn" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition duration-150 text-sm">
+                                <button id="monthly-mark-btn" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition duration-150 text-sm ${quickMarkDisabledClass}" ${quickMarkDisabledAttr}>
                                     Mark All Present (Grade ${attendanceFilterGrade})
                                 </button>
                                 <p class="text-xs text-indigo-500">Marks Sun-Fri as 'Present' for the selected grade. Overwrites existing data.</p>
+                                ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold">Switch to Editor Mode to use quick mark.</p>' : ''}
                             </div>
                         </div>
                     </div>
@@ -1638,7 +1812,7 @@
                 </div>
             `;
         
-        // --- NEW: Grade Filter Listener ---
+        // Attach event listeners ONLY if we are in Editor Mode (or they will be guarded by the function itself)
         document
           .getElementById("monthly-select-grade")
           .addEventListener("change", (e) => {
@@ -1646,7 +1820,6 @@
               renderMonthlyAttendance();
           });
           
-        // Attach event listeners for month/year change
         document
           .getElementById("monthly-select-month")
           .addEventListener("change", window.updateMonthlyViewDate);
@@ -1707,6 +1880,12 @@
         const cell = event.target.closest(".attendance-mark");
         // The cell check needs to ensure it's not a holiday/unclickable cell
         if (!cell || cell.classList.contains("holiday") || cell.dataset.status === '-') return; 
+        
+        if (!isEditorMode) {
+            showMessage("Access denied: Switch to Editor Mode to mark attendance.", "red");
+            return;
+        }
+
 
         const studentId = cell.dataset.studentId;
         const date = cell.dataset.date;
@@ -1768,6 +1947,8 @@
           }
           return acc;
         }, {});
+        
+        const cellCursorClass = isEditorMode ? 'cursor-pointer' : 'cursor-default';
 
         // 2. Build the table rows using the FILTERED student list
         studentsForAttendance.forEach((student) => {
@@ -1802,7 +1983,7 @@
             }
             
             // If it's a Saturday, apply the holiday class and prevent interaction
-            const cellClasses = `calendar-cell attendance-mark border border-gray-100 flex items-center justify-center ${statusClass} ${isSaturday ? "holiday pointer-events-none" : ""}`;
+            const cellClasses = `calendar-cell attendance-mark border border-gray-100 flex items-center justify-center ${statusClass} ${isSaturday ? "holiday pointer-events-none" : cellCursorClass} ${!isEditorMode && !isSaturday ? 'view-only-disabled' : ''}`;
 
             cellsHtml += `
                         <td class="p-0">
@@ -1950,6 +2131,8 @@
                   
                   // Ensure string parameters passed to onclick are correctly quoted and escaped
                   const onClickHandler = `deleteExamBatch('${batch.examBatchId}', '${batch.subject.replace(/'/g, "\\'")}', '${batch.type.replace(/'/g, "\\'")}')`;
+                  const deleteButtonClass = isEditorMode ? 'text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100' : 'view-only-disabled text-gray-400 p-1';
+
 
                   return `
                       <tr class="bg-white hover:bg-gray-50 border-y border-gray-200">
@@ -1968,7 +2151,7 @@
                           <td class="py-3 px-4 text-center font-extrabold ${percentage >= 70 ? 'text-green-600' : 'text-red-600'}">${percentage.toFixed(1)}%</td>
                           <td class="py-3 px-4 text-center">
                               <button onclick="${onClickHandler}" 
-                                      class="text-red-500 hover:text-red-700 transition duration-150 p-1 rounded-full hover:bg-red-100" title="Delete Exam Batch">
+                                      class="${deleteButtonClass} transition duration-150" title="Delete Exam Batch" ${isEditorMode ? '' : 'disabled'}>
                                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                               </button>
                           </td>
@@ -2110,14 +2293,17 @@
                 <div class="max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg text-center space-y-4">
                     <h3 class="text-xl font-semibold text-indigo-700">Select Grade for Scoring</h3>
                     <p class="text-gray-600">Choose the grade level you are currently entering exam scores for.</p>
-                    <select id="exam-grade-selector" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm text-lg">
+                    <select id="exam-grade-selector" class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm text-lg" ${isEditorMode ? '' : 'disabled'}>
                         ${gradeOptions}
                     </select>
+                    ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold mt-4">Switch to Editor Mode to select a grade for scoring.</p>' : ''}
                 </div>
              `;
-             document.getElementById('exam-grade-selector').addEventListener('change', (e) => {
-                 handleExamGradeSelection(e.target.value);
-             });
+             if (isEditorMode) {
+                document.getElementById('exam-grade-selector').addEventListener('change', (e) => {
+                    handleExamGradeSelection(e.target.value);
+                });
+             }
              return;
         }
         
@@ -2139,6 +2325,9 @@
              `;
              return;
         }
+        
+        const formDisabledAttr = isEditorMode ? '' : 'disabled';
+        const buttonDisabledClass = isEditorMode ? '' : 'view-only-disabled';
 
 
         const studentScoreRows = studentsForScoring.map(s => `
@@ -2147,7 +2336,7 @@
                 <td class="py-3 px-4 text-gray-700">${s.name}</td>
                 <td class="py-3 px-4 text-gray-700">${s.grade || 'N/A'}</td>
                 <td class="py-3 px-4">
-                    <input type="number" step="0.1" data-id="${s.id}" class="score-input w-24 p-1 border border-gray-300 rounded-md text-center focus:ring-indigo-500 focus:border-indigo-500" placeholder="Score">
+                    <input type="number" step="0.1" data-id="${s.id}" class="score-input w-24 p-1 border border-gray-300 rounded-md text-center focus:ring-indigo-500 focus:border-indigo-500" placeholder="Score" ${formDisabledAttr}>
                 </td>
             </tr>
         `).join('');
@@ -2165,25 +2354,25 @@
                 </div>
 
                 <!-- Exam Details Form -->
-                <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="bg-white p-6 rounded-xl shadow-lg ${buttonDisabledClass}">
                     <h3 class="text-xl font-semibold mb-4 text-indigo-700 border-b pb-2">Exam Details</h3>
                     <form id="exam-details-form" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <label for="exam-subject" class="block text-sm font-medium text-gray-700">Subject</label>
-                                <input type="text" id="exam-subject" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                                <input type="text" id="exam-subject" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" ${formDisabledAttr}>
                             </div>
                             <div>
                                 <label for="exam-type" class="block text-sm font-medium text-gray-700">Test Type</label>
-                                <input type="text" id="exam-type" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                                <input type="text" id="exam-type" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" ${formDisabledAttr}>
                             </div>
                             <div>
                                 <label for="exam-max-marks" class="block text-sm font-medium text-gray-700">Max Marks</label>
-                                <input type="number" id="exam-max-marks" required min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                                <input type="number" id="exam-max-marks" required min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" ${formDisabledAttr}>
                             </div>
                             <div>
                                 <label for="exam-date" class="block text-sm font-medium text-gray-700">Exam Date</label>
-                                <input type="date" id="exam-date" value="${today}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                                <input type="date" id="exam-date" value="${today}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" ${formDisabledAttr}>
                             </div>
                         </div>
                     </form>
@@ -2207,60 +2396,63 @@
                             </tbody>
                         </table>
                     </div>
-                    <button id="save-scores-btn" class="mt-6 w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-150">
+                    <button id="save-scores-btn" class="mt-6 w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-150 ${buttonDisabledClass}" ${formDisabledAttr}>
                         Save Exam Results
                     </button>
+                    ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold mt-2">Switch to Editor Mode to enter and save scores.</p>' : ''}
                 </div>
             </div>
         `;
 
-        // Add event listener for saving scores
-        document.getElementById('save-scores-btn').addEventListener('click', () => {
-            const subject = document.getElementById('exam-subject').value.trim();
-            const type = document.getElementById('exam-type').value.trim(); 
-            const maxMarks = document.getElementById('exam-max-marks').value;
-            const date = document.getElementById('exam-date').value;
+        if (isEditorMode) {
+            // Add event listener for saving scores
+            document.getElementById('save-scores-btn').addEventListener('click', () => {
+                const subject = document.getElementById('exam-subject').value.trim();
+                const type = document.getElementById('exam-type').value.trim(); 
+                const maxMarks = document.getElementById('exam-max-marks').value;
+                const date = document.getElementById('exam-date').value;
 
-            if (!subject || !type || !maxMarks || !date) {
-                showMessage("Please fill in all Exam Details (Subject, Type, Max Marks, Date).", "red");
-                return;
-            }
-
-            const scoreInputs = document.querySelectorAll('.score-input');
-            const scores = {};
-            
-            let allScoresValid = true;
-            scoreInputs.forEach(input => {
-                const studentId = input.dataset.id;
-                const scoreValue = input.value.trim();
-                
-                if (scoreValue !== "") {
-                    const scoreNum = parseFloat(scoreValue);
-                    const maxNum = parseInt(maxMarks);
-                    
-                    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > maxNum) {
-                        allScoresValid = false;
-                        input.classList.add('border-red-500', 'ring-red-500');
-                        input.focus();
-                    } else {
-                         input.classList.remove('border-red-500', 'ring-red-500');
-                         scores[studentId] = scoreNum;
-                    }
+                if (!subject || !type || !maxMarks || !date) {
+                    showMessage("Please fill in all Exam Details (Subject, Type, Max Marks, Date).", "red");
+                    return;
                 }
+
+                const scoreInputs = document.querySelectorAll('.score-input');
+                const scores = {};
+                
+                let allScoresValid = true;
+                scoreInputs.forEach(input => {
+                    const studentId = input.dataset.id;
+                    const scoreValue = input.value.trim();
+                    
+                    if (scoreValue !== "") {
+                        const scoreNum = parseFloat(scoreValue);
+                        const maxNum = parseInt(maxMarks);
+                        
+                        if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > maxNum) {
+                            allScoresValid = false;
+                            input.classList.add('border-red-500', 'ring-red-500');
+                            input.focus();
+                        } else {
+                            input.classList.remove('border-red-500', 'ring-red-500');
+                            scores[studentId] = scoreNum;
+                        }
+                    }
+                });
+
+                if (!allScoresValid) {
+                    showMessage(`One or more scores are invalid. They must be between 0 and ${maxMarks}.`, "red");
+                    return;
+                }
+
+                if (Object.keys(scores).length === 0) {
+                    showMessage("Please enter at least one score.", "red");
+                    return;
+                }
+
+                saveExamResults(subject, type, maxMarks, date, scores);
             });
-
-            if (!allScoresValid) {
-                 showMessage(`One or more scores are invalid. They must be between 0 and ${maxMarks}.`, "red");
-                 return;
-            }
-
-            if (Object.keys(scores).length === 0) {
-                 showMessage("Please enter at least one score.", "red");
-                 return;
-            }
-
-            saveExamResults(subject, type, maxMarks, date, scores);
-        });
+        }
       }
       
       // Function to close any modal
