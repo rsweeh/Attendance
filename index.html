@@ -451,14 +451,26 @@
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
       import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+      // Hardcoded Firebase Config provided by the user to fix the "Config Missing" error.
+      const USER_FIREBASE_CONFIG = {
+        apiKey: "AIzaSyAjfgjWwe3yBGsC2SjQGbF5a4rWf8rXyZM",
+        authDomain: "student-attendance-a9e41.firebaseapp.com",
+        projectId: "student-attendance-a9e41",
+        storageBucket: "student-attendance-a9e41.firebasestorage.app",
+        messagingSenderId: "22011088154",
+        appId: "1:22011088154:web:13a1655b254138448830a3"
+      };
+
       // Global Firebase Variables (Mandatory Canvas Setup)
-      const appId =
-        typeof __app_id !== "undefined" ? __app_id : "default-app-id";
-      // FIX: Use robust checks to provide an empty object/null if the string is undefined or empty.
+      // We prioritize the environment variable if present, otherwise use the user's hardcoded config.
       const firebaseConfig =
         (typeof __firebase_config !== "undefined" && __firebase_config)
           ? JSON.parse(__firebase_config)
-          : null;
+          : USER_FIREBASE_CONFIG; 
+
+      // We use the projectId from the active config (user's or environment's) as the App ID for Firestore paths.
+      const appId = firebaseConfig ? firebaseConfig.projectId : "default-app-id"; 
+      
       const initialAuthToken =
         typeof __initial_auth_token !== "undefined"
           ? __initial_auth_token
@@ -519,21 +531,44 @@
 
         setLogLevel("Debug");
 
-        // Set up Authentication Listener
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            userId = user.uid;
-            userStatusEl.textContent = "Status: Connected";
-            mobileUserStatusEl.textContent = "Connected";
-            userIdDisplayEl.textContent = `User ID: ${userId}`;
+        // Use async function to handle initial authentication before setting up listeners
+        async function authenticateAndListen() {
+             try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    // Sign in anonymously for public data access if no token is provided
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Initial Firebase Auth Error:", error);
+                userStatusEl.textContent = "Status: Auth Failed!";
+                mobileUserStatusEl.textContent = "Auth Failed!";
+                // Even if auth fails, we proceed to set up the onAuthStateChanged listener
+            }
 
-            // Once authenticated, start listening for data
-            setupDataListeners();
-          } else {
-            handleAuth();
-          }
-        });
+            // Set up Authentication Listener - This is the standard way to proceed
+            onAuthStateChanged(auth, (user) => {
+              if (user) {
+                userId = user.uid;
+                userStatusEl.textContent = "Status: Connected";
+                mobileUserStatusEl.textContent = "Connected";
+                userIdDisplayEl.textContent = `User ID: ${userId}`;
 
+                // Once authenticated, start listening for data
+                setupDataListeners();
+              } else {
+                // Should only happen if sign-out occurs, but handle case where initial sign-in fails entirely
+                userId = null;
+                userStatusEl.textContent = "Status: Disconnected";
+                mobileUserStatusEl.textContent = "Disconnected";
+                userIdDisplayEl.textContent = `User ID: N/A`;
+                // Attempt to retry auth if needed, but for now, just log and wait.
+              }
+            });
+        }
+        
+        authenticateAndListen();
         renderView("dashboard");
       }
 
@@ -561,21 +596,7 @@
         );
 
 
-      async function handleAuth() {
-        if (!db || !auth) return; // Guard against uninitialized Firebase
-        try {
-          if (initialAuthToken) {
-            await signInWithCustomToken(auth, initialAuthToken);
-          } else {
-            // Sign in anonymously for public data access
-            await signInAnonymously(auth);
-          }
-        } catch (error) {
-          console.error("Firebase Auth Error:", error);
-          userStatusEl.textContent = "Status: Auth Error!";
-          mobileUserStatusEl.textContent = "Auth Error!";
-        }
-      }
+      // NOTE: Removed redundant handleAuth function as its logic is now integrated into initializeFirebase
 
       async function addStudent(name, rollNo, grade) {
         if (!userId || !db) {
@@ -596,7 +617,7 @@
           showMessage(`Student ${name} (Grade ${normalizedGrade}) added successfully!`, "green");
         } catch (e) {
           console.error("Error adding student: ", e);
-          showMessage("Error adding student.", "red");
+          showMessage("Error adding student. Check permissions/console.", "red");
         }
       }
       
@@ -620,7 +641,7 @@
             closeModal('edit-student-modal');
         } catch (e) {
             console.error("Error updating student: ", e);
-            showMessage("Error updating student details.", "red");
+            showMessage("Error updating student details. Check permissions/console.", "red");
         }
       }
 
@@ -635,7 +656,7 @@
           showMessage("Student deleted successfully!", "green");
         } catch (e) {
           console.error("Error deleting student: ", e);
-          showMessage("Error deleting student.", "red");
+          showMessage("Error deleting student. Check permissions/console.", "red");
         }
       }
 
@@ -659,7 +680,7 @@
           // UI update happens automatically via the global onSnapshot listener for allAttendanceRecords
         } catch (e) {
           console.error("Error setting attendance record: ", e);
-          showMessage("Error saving attendance mark.", "red");
+          showMessage("Error saving attendance mark. Check permissions/console.", "red");
         }
       }
 
@@ -728,7 +749,7 @@
           );
         } catch (e) {
           console.error("Batch write error during monthly mark: ", e);
-          showMessage("Error marking monthly attendance. Check console for details.", "red");
+          showMessage("Error marking monthly attendance. Check permissions/console.", "red");
         }
       }
 
@@ -789,7 +810,7 @@
             renderExamResults(); 
         } catch (e) {
             console.error("Batch write error during exam results save: ", e);
-            showMessage("Error saving exam results. Check console.", "red");
+            showMessage("Error saving exam results. Check permissions/console.", "red");
         }
       }
       
@@ -829,7 +850,7 @@
                   // The onSnapshot listener will handle the UI update automatically
               } catch (e) {
                   console.error("[DELETE] Error deleting exam batch:", e);
-                  showMessage("Error deleting exam records. Check console.", "red");
+                  showMessage("Error deleting exam records. Check permissions/console.", "red");
               }
           } else {
                console.log("[DELETE] Deletion cancelled by user.");
@@ -868,7 +889,10 @@
           },
           (error) => {
             console.error("Error fetching students:", error);
-            showMessage("Could not load student list.", "red");
+            // On permission error, set visual status in UI
+            userStatusEl.textContent = "Status: Permission Denied!";
+            mobileUserStatusEl.textContent = "Denied!";
+            userIdDisplayEl.textContent = `User ID: ${userId} (Permissions Error)`;
           }
         );
 
@@ -894,6 +918,10 @@
           },
           (error) => {
             console.error("Error fetching all attendance records:", error);
+            // On permission error, set visual status in UI
+            userStatusEl.textContent = "Status: Permission Denied!";
+            mobileUserStatusEl.textContent = "Denied!";
+            userIdDisplayEl.textContent = `User ID: ${userId} (Permissions Error)`;
           }
         );
         
@@ -913,6 +941,10 @@
           },
           (error) => {
             console.error("Error fetching exam records:", error);
+            // On permission error, set visual status in UI
+            userStatusEl.textContent = "Status: Permission Denied!";
+            mobileUserStatusEl.textContent = "Denied!";
+            userIdDisplayEl.textContent = `User ID: ${userId} (Permissions Error)`;
           }
         );
       }
@@ -1134,6 +1166,12 @@
 
       function showMessage(text, color) {
         const messageEl = document.getElementById("message");
+        // FIX: Add null check to prevent TypeError
+        if (!messageEl) {
+             console.warn("Attempted to display message, but #message element is missing from current view.", text);
+             return;
+        }
+
         messageEl.textContent = text;
         messageEl.className = `text-sm font-semibold h-5 mt-1 ${
           color === "green" ? "text-green-600" : "text-red-600"
@@ -1144,6 +1182,12 @@
       // Helper function to show messages in the Edit Student Modal
       function showEditMessage(text, color) {
         const messageEl = document.getElementById("edit-student-message");
+        // FIX: Add null check to prevent TypeError
+        if (!messageEl) {
+             console.warn("Attempted to display message, but #edit-student-message element is missing from current view.", text);
+             return;
+        }
+        
         messageEl.textContent = text;
         messageEl.className = `text-sm font-semibold h-5 mt-1 ${
           color === "green" ? "text-green-600" : "text-red-600"
@@ -1219,7 +1263,7 @@
         const stats = calculateAttendanceStats();
         const examStats = calculateStudentExamAverages(); // NEW: Calculate exam stats
         
-        const totalStudents = stats.totalStudents;
+        const totalStudents = students.length; // Use the globally available student count
         const totalPresentMarks = stats.totalPresent + stats.totalLate;
         const totalAbsentMarks = stats.totalAbsent;
         const overallAttendancePercent = stats.globalPercentage;
