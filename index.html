@@ -454,8 +454,9 @@
       // Global Firebase Variables (Mandatory Canvas Setup)
       const appId =
         typeof __app_id !== "undefined" ? __app_id : "default-app-id";
+      // FIX: Use robust checks to provide an empty object/null if the string is undefined or empty.
       const firebaseConfig =
-        typeof __firebase_config !== "undefined"
+        (typeof __firebase_config !== "undefined" && __firebase_config)
           ? JSON.parse(__firebase_config)
           : null;
       const initialAuthToken =
@@ -495,8 +496,20 @@
           console.error("Firebase configuration is missing.");
           userStatusEl.textContent = "Error: Config Missing.";
           mobileUserStatusEl.textContent = "Error!";
+          // Render the view, which will now use the safer approach for missing config
+          renderView("dashboard");
           return;
         }
+        
+        // Ensure the config is not an empty object that failed parsing earlier
+        if (Object.keys(firebaseConfig).length === 0) {
+            console.error("Firebase configuration is empty or malformed.");
+            userStatusEl.textContent = "Error: Config Empty.";
+            mobileUserStatusEl.textContent = "Error!";
+            renderView("dashboard");
+            return;
+        }
+
 
         console.log("[DIAGNOSTIC] Attempting Firebase Initialization...");
         // Initialize Firebase
@@ -549,6 +562,7 @@
 
 
       async function handleAuth() {
+        if (!db || !auth) return; // Guard against uninitialized Firebase
         try {
           if (initialAuthToken) {
             await signInWithCustomToken(auth, initialAuthToken);
@@ -564,8 +578,9 @@
       }
 
       async function addStudent(name, rollNo, grade) {
-        if (!userId) {
-          console.error("User not authenticated.");
+        if (!userId || !db) {
+          console.error("User not authenticated or Database not ready.");
+          showMessage("Error: Database not ready.", "red");
           return;
         }
         try {
@@ -587,8 +602,8 @@
       
       // **NEW: Update Student Function**
       window.updateStudentDetails = async function(id, name, rollNo, grade) {
-        if (!userId) {
-          showMessage("User not authenticated.", "red");
+        if (!userId || !db) {
+          showMessage("Error: Database not ready.", "red");
           return;
         }
         try {
@@ -610,8 +625,9 @@
       }
 
       async function deleteStudent(id) {
-        if (!userId) {
-          console.error("User not authenticated.");
+        if (!userId || !db) {
+          console.error("User not authenticated or Database not ready.");
+          showMessage("Error: Database not ready.", "red");
           return;
         }
         try {
@@ -625,7 +641,7 @@
 
       // Function to set or update a single attendance record
       async function setAttendanceRecord(studentId, date, status) {
-        if (!userId) return;
+        if (!userId || !db) return;
         const docId = `${studentId}_${date}`;
         const attendanceRef = doc(getAttendanceCollectionRef(), docId);
 
@@ -651,9 +667,9 @@
         // Filter students based on current attendance filter grade
         const studentsToMark = getStudentsByGrade(attendanceFilterGrade);
 
-        if (!userId || studentsToMark.length === 0) {
+        if (!userId || studentsToMark.length === 0 || !db) {
           showMessage(
-            "Error: User not authenticated or no students available in the current grade.",
+            "Error: Database not ready or no students available in the current grade.",
             "red"
           );
           return;
@@ -717,8 +733,8 @@
       }
 
       async function saveExamResults(subject, type, maxMarks, date, scores) {
-        if (!userId) {
-          showMessage("Error: User not authenticated.", "red");
+        if (!userId || !db) {
+          showMessage("Error: Database not ready.", "red");
           return;
         }
         if (students.length === 0) {
@@ -781,9 +797,9 @@
       window.deleteExamBatch = async function(batchId, subject, type) {
           console.log(`[DELETE] Attempting to delete batch ID: ${batchId}`);
           
-          if (!userId) {
-              showMessage("User not authenticated. Cannot delete.", "red");
-              console.error("[DELETE] Error: User not authenticated.");
+          if (!userId || !db) {
+              showMessage("Error: Database not ready.", "red");
+              console.error("[DELETE] Error: Database not ready.");
               return;
           }
           
@@ -823,7 +839,7 @@
       // --- DATA LISTENERS ---
 
       function setupDataListeners() {
-        if (!userId) return;
+        if (!userId || !db) return;
 
         // 1. Student Listener
         const qStudents = getStudentCollectionRef();
@@ -1168,6 +1184,16 @@
 
         viewContainer.innerHTML = "";
         
+        // RENDER CHECK: If Firebase is not initialized, show error on data-dependent views
+        if (!firebaseConfig && viewName !== 'dashboard') {
+            viewContainer.innerHTML = `<div class="p-8 bg-red-100 border border-red-400 text-red-700 rounded-lg shadow-lg">
+                <h3 class="text-xl font-bold mb-2">Database Connection Error (Config Missing)</h3>
+                <p>This view requires a live database connection to load student records or save data. Please ensure the Firebase configuration is correctly supplied to the application environment.</p>
+            </div>`;
+            return;
+        }
+
+
         switch (viewName) {
           case "dashboard":
             renderDashboard();
@@ -1199,7 +1225,9 @@
         const overallAttendancePercent = stats.globalPercentage;
         
         // Lists for Top Students
-        const topAttendanceListHtml = stats.topStudentsByAttendance
+        const topAttendanceListHtml = students.length === 0 ? 
+            '<li class="text-gray-500 text-center">No students available.</li>' :
+            stats.topStudentsByAttendance
             .map((s, index) => `
                 <li class="hover:bg-indigo-50/50 transition duration-100 p-2 rounded-lg">
                     <span class="student-rank">${index + 1}.</span>
@@ -1209,7 +1237,9 @@
             `)
             .join("") || '<li class="text-gray-500 text-center">No attendance data to rank.</li>';
 
-        const topMarksListHtml = examStats.topStudentsByMarks
+        const topMarksListHtml = students.length === 0 ? 
+            '<li class="text-gray-500 text-center">No students available.</li>' :
+            examStats.topStudentsByMarks
             .map((s, index) => `
                 <li class="hover:bg-indigo-50/50 transition duration-100 p-2 rounded-lg">
                     <span class="student-rank">${index + 1}.</span>
