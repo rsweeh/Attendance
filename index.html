@@ -853,13 +853,13 @@
         }
       }
 
-      async function markMonthPresent(year, month) {
+      async function markMonthPresent(year, month, targetGrade) {
         if (!isEditorMode) {
           showMessage("Access denied: Switch to Editor Mode to bulk mark attendance.", "red");
           return;
         }
         // Filter students based on current attendance filter grade
-        const studentsToMark = getStudentsByGrade(attendanceFilterGrade);
+        const studentsToMark = getStudentsByGrade(targetGrade);
 
         if (!userId || studentsToMark.length === 0 || !db) {
           showMessage(
@@ -917,7 +917,7 @@
         try {
           await batch.commit();
           showMessage(
-            `Successfully marked ${studentsToMark.length} students in Grade ${attendanceFilterGrade} Present for all school days (Sun-Fri) in ${monthName} ${year}. Total records processed: ${totalRecords}.`,
+            `Successfully marked ${studentsToMark.length} students in Grade ${targetGrade} Present for all school days (Sun-Fri) in ${monthName} ${year}. Total records processed: ${totalRecords}.`,
             "green"
           );
         } catch (e) {
@@ -925,6 +925,68 @@
           showMessage("Error marking monthly attendance. Check permissions/console.", "red");
         }
       }
+      
+      // **NEW FUNCTION: Delete all attendance for the specified month/grade**
+      async function deleteMonthAttendance(year, month, targetGrade) { 
+          if (!isEditorMode) {
+              showMessage("Access denied: Switch to Editor Mode to bulk delete attendance.", "red");
+              return;
+          }
+          const studentsToDelete = getStudentsByGrade(targetGrade);
+
+          if (!userId || studentsToDelete.length === 0 || !db) {
+              showMessage(
+                  "Error: Database not ready or no students available in the current grade.",
+                  "red"
+              );
+              return;
+          }
+
+          const startDate = new Date(year, month - 1, 1);
+          const monthName = startDate.toLocaleString("default", { month: "long" });
+
+          let batch = writeBatch(db);
+          let totalRecordsFound = 0;
+          let recordsToDelete = 0;
+
+          // Target month prefix for filtering the cache (e.g., "2023-11")
+          const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
+          const studentIds = new Set(studentsToDelete.map(s => s.id));
+
+          // Iterate through all cached records and find those matching the month and filtered student IDs
+          allAttendanceRecords.forEach(record => {
+              if (record.date.startsWith(monthPrefix) && studentIds.has(record.studentId)) {
+                  const attendanceRef = doc(getAttendanceCollectionRef(), record.id);
+                  batch.delete(attendanceRef);
+                  recordsToDelete++;
+                  totalRecordsFound++;
+
+                  if (recordsToDelete % 490 === 0) {
+                      console.log(`Committing intermediate deletion batch...`);
+                      batch.commit();
+                      batch = writeBatch(db); // Start new batch
+                      recordsToDelete = 0;
+                  }
+              }
+          });
+
+          if (totalRecordsFound === 0) {
+              showMessage(`No attendance records found for Grade ${targetGrade} in ${monthName} ${year} to delete.`, "yellow");
+              return;
+          }
+
+          try {
+              await batch.commit();
+              showMessage(
+                  `Successfully deleted ${totalRecordsFound} attendance records for Grade ${targetGrade} in ${monthName} ${year}.`,
+                  "green"
+              );
+          } catch (e) {
+              console.error("Batch deletion error during monthly cleanup: ", e);
+              showMessage("Error deleting monthly attendance. Check permissions/console.", "red");
+          }
+      }
+      // END NEW FUNCTION
 
       async function saveExamResults(subject, type, maxMarks, date, scores) {
         if (!isEditorMode) {
@@ -1858,13 +1920,16 @@
                         </div>
 
                         <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-200 mt-4 ${quickMarkDisabledClass}">
-                            <h4 class="text-md font-semibold text-indigo-700 mb-2">Monthly Quick Mark (Current View: Grade ${attendanceFilterGrade})</h4>
+                            <h4 class="text-md font-semibold text-indigo-700 mb-2">Monthly Batch Operations (Current View: Grade ${attendanceFilterGrade})</h4>
                             <div class="flex flex-wrap gap-3 items-center">
                                 <button id="monthly-mark-btn" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition duration-150 text-sm ${quickMarkDisabledClass}" ${quickMarkDisabledAttr}>
-                                    Mark All Present (Grade ${attendanceFilterGrade})
+                                    Mark All Present
                                 </button>
-                                <p class="text-xs text-indigo-500">Marks Sun-Fri as 'Present' for the selected grade. Overwrites existing data.</p>
-                                ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold">Log in as Editor to use quick mark.</p>' : ''}
+                                <button id="monthly-delete-btn" class="px-4 py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition duration-150 text-sm ${quickMarkDisabledClass}" ${quickMarkDisabledAttr}>
+                                    Delete All Attendance
+                                </button>
+                                <p class="text-xs text-indigo-500">Marks Sun-Fri as 'Present' or deletes all records for the selected grade/month.</p>
+                                ${!isEditorMode ? '<p class="text-red-500 text-sm font-semibold">Log in as Editor to use batch operations.</p>' : ''}
                             </div>
                         </div>
                     </div>
@@ -1921,6 +1986,11 @@
         document
           .getElementById("monthly-mark-btn")
           .addEventListener("click", window.handleMonthlyMark);
+        
+        // **NEW LISTENER**
+        document
+          .getElementById("monthly-delete-btn")
+          .addEventListener("click", window.handleMonthlyDelete);
           
         // Attach click listener to the table body for cell updates (delegation)
         document
@@ -1945,12 +2015,18 @@
 
       // Helper to handle monthly mark button click
       window.handleMonthlyMark = function() { // Made global
+        if (!isEditorMode) {
+            showMessage("Access denied: Switch to Editor Mode to bulk mark attendance.", "red");
+            return;
+        }
+
         const month = parseInt(
           document.getElementById("monthly-select-month").value
         );
         const year = parseInt(
           document.getElementById("monthly-select-year").value
         );
+        const targetGrade = attendanceFilterGrade;
 
         if (students.length === 0) {
           showMessage("Cannot mark: No students available.", "red");
@@ -1960,12 +2036,49 @@
         const monthName = new Date(year, month - 1).toLocaleString("default", {
           month: "long",
         });
-        console.log(
-          `Confirmation required: Are you sure you want to mark ALL ${students.length} students as 'Present' for all school days (Sun-Fri) in ${monthName} ${year}? This will overwrite existing records.`
-        );
-
-        markMonthPresent(year, month);
+        
+        if (confirm(`Confirmation required: Are you sure you want to mark ALL students in Grade ${targetGrade} as 'Present' for all school days (Sun-Fri) in ${monthName} ${year}? This will overwrite existing records.`)) {
+             markMonthPresent(year, month, targetGrade);
+        }
       }
+      
+      // **NEW HANDLER: Delete monthly attendance**
+      window.handleMonthlyDelete = function() {
+          if (!isEditorMode) {
+              showMessage("Access denied: Switch to Editor Mode to delete attendance.", "red");
+              return;
+          }
+          
+          const month = parseInt(document.getElementById("monthly-select-month").value);
+          const year = parseInt(document.getElementById("monthly-select-year").value);
+          const targetGrade = attendanceFilterGrade;
+
+          if (students.length === 0) {
+              showMessage("Cannot delete: No students available.", "red");
+              return;
+          }
+
+          const monthName = new Date(year, month - 1).toLocaleString("default", { month: "long" });
+          
+          // Check if there are any records in the cache for the current month and filtered grade
+          const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
+          const studentsToFilter = getStudentsByGrade(targetGrade);
+          const studentIds = new Set(studentsToFilter.map(s => s.id));
+          
+          const recordsInMonth = allAttendanceRecords.filter(record => 
+              record.date.startsWith(monthPrefix) && studentIds.has(record.studentId)
+          ).length;
+
+          if (recordsInMonth === 0) {
+              showMessage(`No attendance records found for Grade ${targetGrade} in ${monthName} ${year} to delete.`, "yellow");
+              return;
+          }
+
+          if (confirm(`WARNING: Are you sure you want to PERMANENTLY delete ALL ${recordsInMonth} attendance records for Grade ${targetGrade} in ${monthName} ${year}? This action is irreversible.`)) {
+              deleteMonthAttendance(year, month, targetGrade);
+          }
+      }
+      // END NEW HANDLER
 
       // Helper to handle attendance cell clicks (toggle status)
       window.handleAttendanceCellClick = function(event) { // MADE GLOBAL
